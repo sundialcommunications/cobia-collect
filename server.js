@@ -29,6 +29,7 @@ require('http').createServer(function (request, response) {
 
 	if (request.method == 'OPTIONS') {
 
+		// allow api options
 		response.writeHead(200, {'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS, DELETE'});
 		response.end();
 
