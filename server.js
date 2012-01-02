@@ -93,9 +93,23 @@ require('http').createServer(function (request, response) {
 		form.parse(request);
 	}
 }).listen(80);
-
 console.log('listening on port 80');
 
+// update group and zone up/down counts
+function upDownCount() {
+
+	console.log('updating up/down count');
+
+	// get all hosts
+
+	// add + or - 1 to each of groups[myGroupId] and zones[myZoneId] based on up or down status
+
+	// for each of groups[] and zones[] use the key as an update match on the respective collections and increment numUp/numDown
+
+}
+
+// run it every minute
+setInterval("upDownCount()",60000);
 
 // UPDATE TYPES
 /*
