@@ -1,8 +1,9 @@
+var config = require('./config');
 var fs = require('fs');
-var journey = require('journey');
+var journey = require('../journey/lib/journey');
 var mongodb = require('mongodb');
 var cp = require('child_process');
-var db = new mongodb.Db('collect', new mongodb.Server('127.0.0.1', 27017, {'auto_reconnect':true}), {});
+var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {});
 
 // Array.hasValue
 Array.prototype.hasValue = function(value) {
@@ -19,10 +20,10 @@ fs.readdir('./collectors', function (err, files) {
 		// split, limit 1, remove .js
 		var s = files[i].split('.js',1);
 		// add as valid collector
-		validCollectors[] = s[0];
-		console.log('added collectors/'+files[i];
+		validCollectors[i] = s[0];
+		console.log('added collectors/'+files[i]);
 	}
-}
+});
 
 
 // db open START
@@ -32,36 +33,58 @@ if (db) {
 
 // start the server
 require('http').createServer(function (request, response) {
+	if (request.url == '/update' && request.method == 'POST') {
 
-	if (request.url == '/update') {
+		var body = '';
+		request.on('data', function (data) {
+			body += data;
+		});
+		request.on('end', function () {
 
-		console.log(request);
+			var p = 1;
 
-		var json = new Object();
-
-		// get JSON
-
-		// authenticate request
-
-		// update host
-
-		// update collectors
-		if (json.collectors) {
-
-			for (json.collectors as key) {
-				if (validCollectors.hasValue(key)) {
-					// fork the collector process
-					var n = cp.fork('./collectors/'+key+'.js');
-					// send the json to the collector
-					n.send({hostLogin:username,data:json.collectors[key]});
+			if (body) {
+				try {
+					var json = JSON.parse(body);
+				} catch(e) {
+					p = 0;
+					console.log('error parsing json');
+					console.log(e);
 				}
 			}
 
-		}
+			if (p == 1) {
+			// authenticate request
+			db.collection('hosts', function (err, collection) {
+				collection.find({'login':json.login,'password':json.password}).toArray(function(err, docs) {
+					if (docs) {
+						// update host
+						//console.log(docs);
+						collection.update({'login':json.login}, {'$set':{'uptime':json.uptime,'clientInfo':json.clientInfo,'version':json.version,'outsideIp':request.connection.remoteAddress,'lastUpdate':Math.round(new Date().getTime() / 1000)}}, {}, function(err) {
+						});
 
-		response.writeHead(200, {'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS, DELETE'});
-		response.end();
+						// update collectors
+						if (json.collectors) {
 
+							for (key in json.collectors) {
+								if (validCollectors.hasValue(key)) {
+									// fork the collector process
+									var n = cp.fork('./collectors/'+key+'.js');
+									// send the json to the collector
+									n.send({hostLogin:json.login,data:json.collectors[key]});
+								}
+							}
+
+						}
+
+						response.writeHead(200, { 'Content-Type': 'text/plain' });
+						response.write('success');
+						response.end();
+					}
+				});
+			});
+			}
+		});
 	}
 }).listen(8080);
 

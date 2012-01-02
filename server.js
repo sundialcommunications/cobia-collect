@@ -1,6 +1,7 @@
-var journey = require('journey');
+var config = require('./config');
 var formidable = require('formidable');
 var mongodb = require('mongodb');
+var journey = require('../journey/lib/journey');
 
 /*
 var nodemailer = require('nodemailer');
@@ -14,7 +15,7 @@ nodemailer.SMTP = {
 }
 */
 
-var db = new mongodb.Db('collect', new mongodb.Server('127.0.0.1', 27017, {'auto_reconnect':true}), {});
+var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {});
 
 // db open START
 db.open(function (err, db) {
