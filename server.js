@@ -164,6 +164,390 @@ router.get('/zones').bind(function (req, res, params) {
 	});
 });
 
+
+/*
+GET /zone
+
+get zone
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+zoneId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/zone').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+/*
+POST /zone
+
+create a zone
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+zoneName, zoneNotes
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.post('/zone').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+/*
+DELETE  /zone
+
+delete a zone
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+zoneId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.del('/zone').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+/*
+GET /groups 
+
+get all groups for zoneId
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+zoneId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/groups').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+/*
+GET /group
+
+get group data
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+groupId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/group').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+/*
+POST /group 
+
+create a group
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+groupName, groupNotes
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.post('/group').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+/*
+DELETE /group 
+
+delete a group 
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+groupId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.del('/group').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+/*
+GET /hosts 
+
+get all hosts for groupId 
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+groupId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/hosts').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+/*
+GET /host 
+
+get host data
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+hostId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/host').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+/*
+POST /host 
+
+create a host
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+hostName, hostNotes
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.post('/host').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+
+
+/*
+DELETE /host 
+
+delete a host
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+hostId
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.del('/host').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+
+
+
+/*
+GET /globalCollectors  
+
+list all active collectors in the system
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+N/A
+
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/globalCollectors').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+/*
+GET /collectors   
+
+get collector data for a host
+
+AUTH REQUIRED
+
+REQUEST PARAMS
+hostId, detailed=false
+
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document zone
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/collectors ').bind(function (req, res, params) {
+	auth(params.username, params.password, function (err, docs) {
+		if (err) {
+			res.send(400, {}, {'error':err});
+		} else {
+
+		}
+
+	});
+});
+
+
+
+
+
+
+
+
+
 // db open END
 
 } else {
