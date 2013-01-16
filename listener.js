@@ -1,102 +1,139 @@
 var config = require('./config');
 var fs = require('fs');
-var journey = require('../journey/lib/journey');
+var journey = require('journey');
 var mongodb = require('mongodb');
-var cp = require('child_process');
-var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {});
+var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {journal:true});
 
 // Array.hasValue
 Array.prototype.hasValue = function(value) {
-  var i;
-  for (i=0; i<this.length; i++) { if (this[i] === value) return true; }
-  return false;
+    var i;
+    for (i=0; i<this.length; i++) { if (this[i] === value) return true; }
+    return false;
 }
 
 // create list of valid collectors
 var validCollectors = new Array();
 
 fs.readdir('./collectors', function (err, files) {
-	for (var i=0; i<files.length; i++) {
+for (var i=0; i<files.length; i++) {
 		// split, limit 1, remove .js
 		var s = files[i].split('.js',1);
 		// add as valid collector
 		validCollectors[i] = s[0];
-		console.log('added collectors/'+files[i]);
+		console.log('Adding: collectors/'+files[i]);
 	}
 });
 
+function authorize(d, cb) {
+    // authenticate request
+    db.collection('hosts', function (err, collection) {
+        collection.find({'login':d.login,'key':d.key}).toArray(function(err, docs) {
+            if (docs.length>0) {
+                console.log('Valid login for '+d.login);
+                return cb(true,docs[0]);
+            } else {
+                console.log('Invalid login for '+d.login);
 
-// db open START
-db.open(function (err, db) {
-
-if (db) {
-
-// start the server
-require('http').createServer(function (request, response) {
-	if (request.url == '/update' && request.method == 'POST') {
-
-		var body = '';
-		request.on('data', function (data) {
-			body += data;
-		});
-		request.on('end', function () {
-
-			var p = 1;
-
-			if (body) {
-				try {
-					var json = JSON.parse(body);
-				} catch(e) {
-					p = 0;
-					console.log('error parsing json');
-					console.log(e);
-				}
-			}
-
-			if (p == 1) {
-			// authenticate request
-			db.collection('hosts', function (err, collection) {
-				collection.find({'login':json.login,'password':json.password}).toArray(function(err, docs) {
-					if (docs) {
-						// update host
-						//console.log(docs);
-						collection.update({'login':json.login}, {'$set':{'uptime':json.uptime,'clientInfo':json.clientInfo,'version':json.version,'outsideIp':request.connection.remoteAddress,'lastUpdate':Math.round(new Date().getTime() / 1000)}}, {}, function(err) {
-						});
-
-						// update collectors
-						if (json.collectors) {
-
-							for (key in json.collectors) {
-								if (validCollectors.hasValue(key)) {
-									// fork the collector process
-									var n = cp.fork('./collectors/'+key+'.js');
-									// send the json to the collector
-									n.send({hostLogin:json.login,data:json.collectors[key]});
-								}
-							}
-
-						}
-
-						response.writeHead(200, { 'Content-Type': 'text/plain' });
-						response.write('success');
-						response.end();
-					}
-				});
-			});
-			}
-		});
-	}
-}).listen(8080);
-
-console.log('listening on port 8080');
-
-// db open END
-
-} else {
-
-	// there was an error opening the db connection
-	console.log('error opening db');
+                // check if there was actually data in login and key vars, if there was append it to unauthedBootRequests
+                if (d.login != '' && d.key != '') {
+                    db.collection('unauthedRequests', function (err, collection) {
+                        collection.insert({'login':d.login,'key':d.key,'ts':Math.round((new Date()).getTime() / 1000)}, {}, function (err, objects) {});
+                    });
+                }
+                return cb(false,null);
+            }
+        });
+    });
 
 }
 
+var router = new(journey.Router);
+
+router.post('/boot').bind(function (req, res, data) {
+
+    authorize(data, function (auth, host) {
+
+        if (auth) {
+
+            console.log('Successful request to /boot from '+host.name);
+
+            res.send({"host":host});
+            // log lastBootRequest
+            db.collection('hosts', function (err, collection) {
+                collection.update({_id:host._id},{'$set':{'lastBootRequest':Math.round((new Date()).getTime() / 1000)}}, function(err) {
+                });
+            });
+
+        } else {
+            res.send(403);
+            //res.send({"error":"invalid login"});
+
+        }
+
+    });
+
+});
+
+router.post('/update').bind(function (req, res, data) {
+
+    authorize(data, function (auth, host) {
+
+        if (auth) {
+
+            console.log('Successful request to /update from '+host.name);
+
+            // update hosts
+            db.collection('hosts', function (err, collection) {
+                collection.update({_id:host._id},{'$set':{'uptime':data.uptime,'wanIp':data.wanIp,'reboot':0,'clientInfo':data.clientInfo,'lastUpdate':Math.round((new Date()).getTime() / 1000),'outsideIp':req.connection.remoteAddress,'version':data.version}}, function(err) {
+                });
+            });
+
+            console.log(data);
+
+            if (data.collectors != undefined) {
+                // run collectors
+                console.log('Collector data: '+data.collectors);
+
+                for (i=0; i<data.collectors.length; i++) {
+                    if (validCollectors.hasValue(data.collectors[i].name)) {
+                        // run this collector
+                        console.log('running collector '+data.collectors[i].name+' for '+host.login);
+                    } else {
+                        // collector not supported on system
+                        console.log('unsupported collector '+data.collectors[i].name+' for '+host.login);
+                    }
+                }
+            }
+
+            if (host.reboot == 1) {
+                console.log('Rebooting host '+host.name);
+                res.send({"reboot":1});
+            } else {
+                res.send(200);
+            }
+        } else {
+            res.send(403);
+        }
+
+    });
+
+});
+
+// db open START
+db.open(function (err, db) {
+if (db) {
+
+require('http').createServer(function (request, response) {
+    var body = "";
+    request.addListener('data', function (chunk) { body += chunk });
+    request.addListener('end', function () {
+        // Dispatch the request to the router
+        router.handle(request, body, function (result) {
+            response.writeHead(result.status, result.headers);
+            response.end(result.body);
+        });
+    });
+}).listen(8080);
+
+}
 });
