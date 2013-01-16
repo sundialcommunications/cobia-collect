@@ -1,7 +1,16 @@
 <?php
 
-# cobia-collect-linux-client.php
+###### cobia-collect-linux-client.php ######
+
+# client script for cobia-collect
 # run as cron job every 5 minutes
+# sends collector data for ping, wap, interface, and system data
+
+##### REQUIREMENTS ######
+
+# * linux 2.6+
+# * fping
+# * php5
 
 ###### CONFIGURATION ######
 
@@ -11,7 +20,7 @@
 $login = 'loginString';
 
 # $key = host key
-$key = 'randomString';
+$key = 'keyString';
 
 # $version = host version
 # uname is nice for this: $version = trim(`uname -a`);
