@@ -38,10 +38,10 @@ function authorize(d, cb) {
             } else {
                 console.log('Invalid login for '+d.login);
 
-                // check if there was actually data in login and key vars, if there was append it to unauthedBootRequests
+                // check if there was actually data in login and key vars, if there was append it to unauthedRequests
                 if (d.login != '' && d.key != '') {
                     db.collection('unauthedRequests', function (err, collection) {
-                        collection.insert({'login':d.login,'key':d.key,'ts':Math.round((new Date()).getTime() / 1000)}, {}, function (err, objects) {});
+                        collection.update({'login':d.login,'key':d.key},{'$set':{'login':d.login,'key':d.key,'ts':Math.round((new Date()).getTime() / 1000)}}, {'upsert':true}, function (err, objects) {});
                     });
                 }
                 return cb(false,null);
