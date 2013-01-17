@@ -22,6 +22,9 @@ $login = 'loginString';
 # $key = host key
 $key = 'keyString';
 
+# $listenerApiEndpoint = host and port of cobia-collect server
+$listenerApiEndpoint = 'http://127.0.0.1:8550';
+
 # $version = host version
 # uname is nice for this: $version = trim(`uname -a`);
 $version = trim(`uname -a`);
@@ -214,7 +217,7 @@ try {
 	print_r($jsa);
 	print "\n\n########################SENDING THIS DATA############################\n\n";
 
-	$res = do_post_request('http://192.168.80.153:8080/update', $jsa, array('Content-type: application/json', 'Content-type: text/json'));
+	$res = do_post_request($listenerApiEndpoint . '/update', $jsa, array('Content-type: application/json', 'Content-type: text/json'));
 	$array = json_decode($res, true);
 } catch (Exception $e) {
 	$array['error'] = 'failed to request /status';
