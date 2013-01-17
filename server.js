@@ -93,7 +93,7 @@ require('http').createServer(function (request, response) {
 			});
 		form.parse(request);
 	}
-}).listen(80);
+}).listen(8551);
 console.log('listening on port 80');
 
 // update group and zone up/down counts

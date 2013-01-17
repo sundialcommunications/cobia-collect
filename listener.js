@@ -1,6 +1,7 @@
 var config = require('./config');
 var fs = require('fs');
 var journey = require('journey');
+var fork = require('child_process').fork;
 var mongodb = require('mongodb');
 var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {journal:true});
 
@@ -17,10 +18,12 @@ var validCollectors = new Array();
 fs.readdir('./collectors', function (err, files) {
 for (var i=0; i<files.length; i++) {
 		// split, limit 1, remove .js
-		var s = files[i].split('.js',1);
-		// add as valid collector
-		validCollectors[i] = s[0];
-		console.log('Adding: collectors/'+files[i]);
+		var s = files[i].split('.');
+        if (s[1] == 'js') { // check that file actually ends in .js
+		    // add as valid collector
+		    validCollectors[i] = s[0];
+		    console.log('Adding: collectors/'+files[i]);
+        }
 	}
 });
 
@@ -88,19 +91,23 @@ router.post('/update').bind(function (req, res, data) {
                 });
             });
 
-            console.log(data);
-
             if (data.collectors != undefined) {
                 // run collectors
-                console.log('Collector data: '+data.collectors);
 
-                for (i=0; i<data.collectors.length; i++) {
-                    if (validCollectors.hasValue(data.collectors[i].name)) {
+                var keys = Object.keys(data.collectors);
+                for (i=0; i<keys.length; i++) {
+                    if (validCollectors.hasValue(keys[i])) {
                         // run this collector
-                        console.log('running collector '+data.collectors[i].name+' for '+host.login);
+                        console.log('running collector '+keys[i]+' for '+host.login);
+                        try {
+                            var myS = fork('./collectors/'+keys[i]+'.js');
+                            myS.send([data.collectors[keys[i]],host]);
+                        } catch (err) {
+                            console.log('Error starting collector: '+err);
+                        }
                     } else {
                         // collector not supported on system
-                        console.log('unsupported collector '+data.collectors[i].name+' for '+host.login);
+                        console.log('unsupported collector '+keys[i]+' for '+host.login);
                     }
                 }
             }
@@ -133,7 +140,7 @@ require('http').createServer(function (request, response) {
             response.end(result.body);
         });
     });
-}).listen(8080);
+}).listen(8550);
 
 }
 });
