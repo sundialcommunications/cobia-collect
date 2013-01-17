@@ -39,7 +39,7 @@ $wanInterface = 'eth0';
 $collectors = Array();
 
 // get host uptime
-$uptimeSec = trim(`cat /proc/uptime |cut -d" " -f0`);
+$uptimeSec = trim(`cat /proc/uptime |cut -d" " -f1`);
 
 // wan ip address
 $wanip = trim(`ifconfig $wanInterface | awk '/dr:/{gsub(/.*:/,"",$2);print$2}'`);
