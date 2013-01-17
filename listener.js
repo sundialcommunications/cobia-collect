@@ -1,7 +1,6 @@
 var config = require('./config');
 var fs = require('fs');
 var journey = require('journey');
-var fork = require('child_process').fork;
 var mongodb = require('mongodb');
 var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {journal:true});
 
@@ -14,6 +13,7 @@ Array.prototype.hasValue = function(value) {
 
 // create list of valid collectors
 var validCollectors = new Array();
+var colReqs = new Array();
 
 fs.readdir('./collectors', function (err, files) {
 for (var i=0; i<files.length; i++) {
@@ -22,6 +22,7 @@ for (var i=0; i<files.length; i++) {
         if (s[1] == 'js') { // check that file actually ends in .js
 		    // add as valid collector
 		    validCollectors[i] = s[0];
+            colReqs[s[0]] = require('./collectors/'+files[i]);
 		    console.log('Adding: collectors/'+files[i]);
         }
 	}
@@ -95,19 +96,18 @@ router.post('/update').bind(function (req, res, data) {
                 // run collectors
 
                 var keys = Object.keys(data.collectors);
-                for (i=0; i<keys.length; i++) {
-                    if (validCollectors.hasValue(keys[i])) {
+                for (f=0; f<keys.length; f++) {
+                    if (validCollectors.hasValue(keys[f])) {
                         // run this collector
-                        console.log('running collector '+keys[i]+' for '+host.login);
+                        console.log('running collector '+keys[f]+' for '+host.login);
                         try {
-                            var myS = fork('./collectors/'+keys[i]+'.js');
-                            myS.send([data.collectors[keys[i]],host]);
+                            colReqs[keys[f]].incomingData(db, data.collectors[keys[f]], host);
                         } catch (err) {
                             console.log('Error starting collector: '+err);
                         }
                     } else {
                         // collector not supported on system
-                        console.log('unsupported collector '+keys[i]+' for '+host.login);
+                        console.log('unsupported collector '+keys[f]+' for '+host.login);
                     }
                 }
             }
