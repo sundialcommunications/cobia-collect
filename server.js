@@ -2,6 +2,7 @@ var config = require('./config');
 var fs = require('fs');
 var journey = require('journey');
 var mongodb = require('mongodb');
+var async = require('async');
 var bcrypt = require('bcrypt');
 var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {journal:true});
 
@@ -12,25 +13,40 @@ Array.prototype.hasValue = function(value) {
     return false;
 }
 
+function isValidMongoId(id) {
+    id = id.toLowerCase();
+    var validChar='0123456789abcdef';
+    var v = true;
+    if (id.length != 24) {
+        v = false;
+    }
+    for(idx=0;idx<id.length;idx++){
+        if(validChar.indexOf(id.charAt(idx))<0){
+            v = false;
+        }
+    }
+    return v;
+}
+
 function checkParams(params, validator, cb) {
 
-    var err = new Array();
-    err.errorExists = false;
-    err.errorString = '';
+    var err = false;
+    var errorString = '';
 
     for (i=0; i<validator.length; i++) {
         if (params[validator[i]] == undefined || params[validator[i]] == null) {
             // value doesn't exist
-            err.errorExists = true;
-            err.errorString += validator[i]+' ';
+            err = true;
+            errorString += validator[i]+' ';
         }
     }
 
-    if (err.errorExists == true) {
-        err.errorString = 'the following parameters must have a value: '+err.errorString;
+    if (err == true) {
+        cb('the following parameters must have a value: '+errorString);
+    } else {
+        cb(null);
     }
 
-    cb(err);
 }
 
 // create list of valid collectors
@@ -115,24 +131,51 @@ for any method which requires authorization, simple provide the following 2 para
 username
 password
 */
-function auth(username, password, callback) {
+function auth(username, password, res, callback) {
     if (username == undefined || password == undefined) {
-        callback('undefined username or password', new Array());
+		res.send(401);
     } else {
 
 	db.collection('admins', function (err, collection) {
 		collection.find({'username':username}).toArray(function(err, docs) {
-            var bhash = bcrypt.hashSync(password, 8);
-            var match = bcrypt.compareSync(password, docs[0].password);
-			if (docs.length == 0 || match == false) {
-				err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
-			}
-			callback(err, docs);
+            if (docs.length>0) {
+                var bhash = bcrypt.hashSync(password, 8);
+                var match = bcrypt.compareSync(password, docs[0].password);
+			    if (docs.length == 0 || match == false) {
+                    res.send(401);
+				    //err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
+			    }
+            } else {
+                res.send(401);
+				//err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
+            }
+			callback(docs);
 		});
 	});
 
     }
 }
+
+/*
+GET /auth - test auth
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+username*
+password*
+
+RESPONSE CODES
+200 - Valid Zone
+	returns {success:1}
+400 - Unauthorized
+	returns {error:err}
+*/
+router.get('/auth').bind(function (req, res, params) {
+	auth(params.username, params.password, res, function (docs) {
+        res.send({'success':1});
+	});
+});
 
 /*
 GET /zones - get all zones
@@ -148,10 +191,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/zones').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (docs) {
 
             db.collection('zones', function (err, collection) {
                 collection.find({}).toArray(function(err, docs) {
@@ -163,7 +203,6 @@ router.get('/zones').bind(function (req, res, params) {
                 });
             });
 
-		}
 	});
 });
 
@@ -182,15 +221,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var zoneId = new mongodb.ObjectID(params.zoneId);
@@ -208,8 +244,6 @@ router.get('/zone').bind(function (req, res, params) {
                     }
                 }
             });
-
-		}
 
 	});
 });
@@ -232,15 +266,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['name','notes'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
 
                     db.collection('zones', function (err, collection) {
@@ -256,13 +287,11 @@ router.post('/zone').bind(function (req, res, params) {
                 }
             });
 
-		}
-
 	});
 });
 
 /*
-DELETE  /zone - delete a zone
+DELETE /zone - delete a zone
 
 AUTH REQUIRED
 
@@ -276,35 +305,48 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
-            checkParams(params, ['zoneId'], function (err) {
-
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
-                } else {
-                    try {
-                        var zoneId = new mongodb.ObjectID(params.zoneId);
-                        db.collection('zones', function (err, collection) {
-                            collection.remove({'_id':zoneId}, function(err) {
-                                if (err) {
-                                    res.send(500, {}, {'error':err});
-                                } else {
-                                    res.send({'success':1});
-                                }
-                            });
-                        });
-                    } catch (err) {
-                        res.send(500, {}, {'error':err});
+            async.series([
+                function(callback) {
+                    if (isValidMongoId(params.zoneId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid zoneId', '');
                     }
+                },
+                function(callback) {
+                    checkParams(params, ['zoneId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+                function(callback) {
+                    db.collection('groups', function (err, collection) {
+                        collection.find({'zoneId':new mongodb.ObjectID(params.zoneId)}).toArray(function(err, docs) {
+                            if (docs.length>0) {
+                                callback('all groups must be removed from a zone before deleting it', '');
+                            } else {
+                                callback(null, '');
+                            }
+                        });
+                    });
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+                    db.collection('zones', function (err, collection) {
+                        collection.remove({'_id':new mongodb.ObjectID(params.zoneId)}, function(err) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1});
+                            }
+                        });
+                    });
                 }
             });
-
-		}
-
 	});
 });
 
@@ -323,15 +365,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/groups').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var zoneId = new mongodb.ObjectID(params.zoneId);
@@ -349,8 +388,6 @@ router.get('/groups').bind(function (req, res, params) {
                     }
                 }
             });
-
-		}
 
 	});
 });
@@ -370,15 +407,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['groupId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var groupId = new mongodb.ObjectID(params.groupId);
@@ -396,8 +430,6 @@ router.get('/group').bind(function (req, res, params) {
                     }
                 }
             });
-
-		}
 
 	});
 });
@@ -420,35 +452,51 @@ RESPONSE CODES
 400 - Unauthorized
 	returns nothing
 */
+
 router.post('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
-            checkParams(params, ['name','notes','zoneId'], function (err) {
-
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
-                } else {
-                    try {
-                        var zoneId = new mongodb.ObjectID(params.zoneId);
-                        db.collection('groups', function (err, collection) {
-                            collection.insert({'name':params.name, 'notes':params.notes, 'zoneId':zoneId, 'numUp':0, 'numDown':0, 'numTotal':0}, function(err, docs) {
-                                if (err) {
-                                    res.send(500, {}, {'error':err});
-                                } else {
-                                    res.send({'success':1, 'group':docs[0]});
-                                }
-                            });
-                        });
-                    } catch (err) {
-                        res.send(500, {}, {'error':err});
+            async.series([
+                function(callback) {
+                    checkParams(params, ['name','notes','zoneId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+                function(callback) {
+                    if (isValidMongoId(params.zoneId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid zoneId', '');
                     }
+                },
+                function(callback) {
+                    db.collection('zones', function (err, collection) {
+                        collection.find({'_id':new mongodb.ObjectID(params.zoneId)}).toArray(function(err, docs) {
+                            if (docs.length>0) {
+                                callback(null, '');
+                            } else {
+                                callback('that zoneId was not found', '');
+                            }
+                        });
+                    });
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+                    var zoneId = new mongodb.ObjectID(params.zoneId);
+                    db.collection('groups', function (err, collection) {
+                        collection.insert({'name':params.name, 'notes':params.notes, 'zoneId':new mongodb.ObjectID(params.zoneId), 'numUp':0, 'numDown':0, 'numTotal':0}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'group':docs[0]});
+                            }
+                        });
+                    });
                 }
             });
-
-		}
 	});
 });
 
@@ -467,35 +515,48 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
-            checkParams(params, ['groupId'], function (err) {
-
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
-                } else {
-                    try {
-                        var groupId = new mongodb.ObjectID(params.groupId);
-                        db.collection('groups', function (err, collection) {
-                            collection.remove({'_id':groupId}, function(err) {
-                                if (err) {
-                                    res.send(500, {}, {'error':err});
-                                } else {
-                                    res.send({'success':1});
-                                }
-                            });
-                        });
-                    } catch (err) {
-                        res.send(500, {}, {'error':err});
+            async.series([
+                function(callback) {
+                    if (isValidMongoId(params.groupId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid groupId', '');
                     }
+                },
+                function(callback) {
+                    checkParams(params, ['groupId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+                function(callback) {
+                    db.collection('hosts', function (err, collection) {
+                        collection.find({'groupId':new mongodb.ObjectID(params.groupId)}).toArray(function(err, docs) {
+                            if (docs.length>0) {
+                                callback('all hosts must be removed from a group before deleting it', '');
+                            } else {
+                                callback(null, '');
+                            }
+                        });
+                    });
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+                    db.collection('groups', function (err, collection) {
+                        collection.remove({'_id':new mongodb.ObjectID(params.groupId)}, function(err) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1});
+                            }
+                        });
+                    });
                 }
             });
-
-		}
-
 	});
 });
 
@@ -514,15 +575,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/hosts').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['groupId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var groupId = new mongodb.ObjectID(params.groupId);
@@ -540,8 +598,6 @@ router.get('/hosts').bind(function (req, res, params) {
                     }
                 }
             });
-
-		}
 
 	});
 });
@@ -561,15 +617,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/hostsForZone').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var zoneId = new mongodb.ObjectID(params.zoneId);
@@ -587,8 +640,6 @@ router.get('/hostsForZone').bind(function (req, res, params) {
                     }
                 }
             });
-
-		}
 
 	});
 });
@@ -608,15 +659,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['hostId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var hostId = new mongodb.ObjectID(params.hostId);
@@ -634,8 +682,6 @@ router.get('/host').bind(function (req, res, params) {
                     }
                 }
             });
-
-		}
 
 	});
 });
@@ -669,35 +715,71 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
-            checkParams(params, ['login','key','name','notes','groupId','zoneId'], function (err) {
+            async.series([
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
-                } else {
-                    try {
-                        var groupId = new mongodb.ObjectID(params.groupId);
-                        var zoneId = new mongodb.ObjectID(params.zoneId);
-                        db.collection('hosts', function (err, collection) {
-                            collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':groupId, 'zoneId':zoneId}, function(err, docs) {
-                                if (err) {
-                                    res.send(500, {}, {'error':err});
-                                } else {
-                                    res.send({'success':1, 'host':docs[0]});
-                                }
-                            });
-                        });
-                    } catch (err) {
-                        res.send(500, {}, {'error':err});
+                function(callback) {
+                    checkParams(params, ['login','key','name','notes','groupId','zoneId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+
+                function(callback) {
+                    if (isValidMongoId(params.groupId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid groupId', '');
                     }
+                },
+
+                function(callback) {
+                    if (isValidMongoId(params.zoneId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid zoneId', '');
+                    }
+                },
+
+                function(callback) {
+                    db.collection('zones', function (err, collection) {
+                        collection.find({'_id':new mongodb.ObjectID(params.zoneId)}).toArray(function(err, docs) {
+                            if (docs.length>0) {
+                                callback(null, '');
+                            } else {
+                                callback('that zoneId was not found', '');
+                            }
+                        });
+                    });
+                },
+                function(callback) {
+                    db.collection('groups', function (err, collection) {
+                        collection.find({'_id':new mongodb.ObjectID(params.groupId)}).toArray(function(err, docs) {
+                            if (docs.length>0) {
+                                callback(null, '');
+                            } else {
+                                callback('that groupId was not found', '');
+                            }
+                        });
+                    });
+                }
+
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+                    db.collection('hosts', function (err, collection) {
+                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(params.zoneId)}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'host':docs[0]});
+                            }
+                        });
+                    });
                 }
             });
-
-		}
 
 	});
 });
@@ -717,15 +799,12 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             checkParams(params, ['hostId'], function (err) {
 
-                if (err.errorExists) {
-                    res.send(500, {}, {'error':err.errorString});
+                if (err) {
+                    res.send(500, {}, {'error':err});
                 } else {
                     try {
                         var hostId = new mongodb.ObjectID(params.hostId);
@@ -744,8 +823,6 @@ router.del('/host').bind(function (req, res, params) {
                 }
             });
 
-		}
-
 	});
 });
 
@@ -763,14 +840,9 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/globalCollectors').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
+	auth(params.username, params.password, res, function (err, docs) {
 
             res.send({'success':1, 'collectors':validCollectors});
-
-		}
 
 	});
 });
@@ -792,14 +864,8 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/collectors ').bind(function (req, res, params) {
-	auth(params.username, params.password, function (err, docs) {
-		if (err) {
-			res.send(400, {}, {'error':err});
-		} else {
-            res.send({'success':1});
-
-		}
-
+	auth(params.username, params.password, res, function (err, docs) {
+        res.send({'success':1});
 	});
 });
 
@@ -809,16 +875,29 @@ db.open(function (err, db) {
 if (db) {
 
 require('http').createServer(function (request, response) {
+
+    if (request.method == 'OPTIONS') {
+
+        response.writeHead(200, {'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS, DELETE'});
+        response.end();
+
+    } else {
+
     var body = "";
     request.addListener('data', function (chunk) { body += chunk });
     request.addListener('end', function () {
         // Dispatch the request to the router
         router.handle(request, body, function (result) {
             console.log(request.method+' '+request.url);
+            result.headers['Access-Control-Allow-Origin'] = '*';
+            result.headers['Access-Control-Allow-Methods'] = '*';
             response.writeHead(result.status, result.headers);
             response.end(result.body);
         });
     });
+
+    }
+
 }).listen(8551);
 console.log('listening on port 8551');
 
