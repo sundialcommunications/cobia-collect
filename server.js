@@ -119,6 +119,7 @@ function auth(username, password, callback) {
     if (username == undefined || password == undefined) {
         callback('undefined username or password', new Array());
     } else {
+
 	db.collection('admins', function (err, collection) {
 		collection.find({'username':username}).toArray(function(err, docs) {
             var bhash = bcrypt.hashSync(password, 8);
@@ -129,6 +130,7 @@ function auth(username, password, callback) {
 			callback(err, docs);
 		});
 	});
+
     }
 }
 
@@ -825,11 +827,85 @@ console.log('listening on port 8551');
 
 // update group and zone up/down counts
 function upDownCount() {
+
+    var groups = new Object();
+    var zones = new Object();
+
 	console.log('updating up/down count');
 	// get all hosts
-	// add + or - 1 to each of groups[myGroupId] and zones[myZoneId] based on up or down status
-	// for each of groups[] and zones[] use the key as an update match on the respective collections and increment numUp/numDown
+
+	db.collection('hosts', function (err, collection) {
+		collection.find({}).toArray(function(err, docs) {
+            // loop through each host
+            for (var i=0; i<docs.length; i++) {
+
+                // calculate groups
+                if (docs[i].groupId != undefined) {
+
+                    if (!groups[docs[i].groupId]) {
+                        // setup
+                        groups[docs[i].groupId] = {};
+                        groups[docs[i].groupId].numTotal = 0;
+                        groups[docs[i].groupId].numDown = 0;
+                        groups[docs[i].groupId].numUp = 0;
+                    }
+
+                    // add this node to group
+                    groups[docs[i].groupId].numTotal += 1;
+                    // check if host has updated in last 10 minutes
+                    if (docs[i].lastUpdate > Math.round((new Date()).getTime() / 1000)-600) {
+                        // host is alive
+                        groups[docs[i].groupId].numUp += 1;
+                    } else {
+                        // host is down
+                        groups[docs[i].groupId].numDown += 1;
+                    }
+                }
+
+                // calculate zones
+                if (docs[i].zoneId != undefined) {
+
+                    if (!zones[docs[i].zoneId]) {
+                        // setup
+                        zones[docs[i].zoneId] = {};
+                        zones[docs[i].zoneId].numTotal = 0;
+                        zones[docs[i].zoneId].numDown = 0;
+                        zones[docs[i].zoneId].numUp = 0;
+                    }
+                    // add this node to zone
+                    zones[docs[i].zoneId].numTotal += 1;
+                    // check if host has updated in last 10 minutes
+                    if (docs[i].lastUpdate > Math.round((new Date()).getTime() / 1000)-600) {
+                        // host is alive
+                        zones[docs[i].zoneId].numUp += 1;
+                    } else {
+                        // host is down
+                        zones[docs[i].zoneId].numDown += 1;
+                    }
+                }
+
+            }
+
+            // update db
+
+            for (var l in groups) {
+                db.collection('groups', function (err, collection) {
+                    collection.update({_id:new mongodb.ObjectID(l)},{'$set':groups[l]}, function(err) {
+                    });
+                });
+            }
+
+            for (var l in zones) {
+                db.collection('zones', function (err, collection) {
+                    collection.update({_id:new mongodb.ObjectID(l)},{'$set':zones[l]}, function(err) {
+                    });
+                });
+            }
+
+		});
+	});
+
 }
 
-// run it every minute
-//setInterval("upDownCount()",60000);
+// run it every 5 minutes
+setInterval(upDownCount,300000);
