@@ -95,7 +95,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="#" onClick="window.refresh();">cobia-collect</a>
+          <a class="brand" href="#" onClick="window.location='/';">cobia-collect</a>
           <div class="nav-collapse collapse">
             <p class="navbar-text pull-right">
               Logged in as <a href="#" id="logout" class="navbar-link"></a>
@@ -166,6 +166,24 @@
 
         </div><!--newHostView-->
 
+        <div class="defHide" id="zoneView">
+          <div class="hero-unit">
+            <h1 id="zoneViewTitle"></h1>
+          </div>
+        <div id="zoneViewGroups"></div>
+        </div><!--zoneView-->
+
+        <div class="defHide" id="groupView">
+          <div class="hero-unit">
+            <h1 id="groupViewTitle"></h1>
+          </div>
+        <div id="groupViewHosts"></div>
+        </div><!--groupView-->
+
+        <div class="defHide" id="hostView">
+        <div id="hostViewHost"></div>
+        </div><!--hostView-->
+
         </div><!--/span-->
       </div><!--/row-->
 
@@ -174,8 +192,6 @@
       <footer>
         <p><a href="https://github.com/cobianet/cobia-collect">https://github.com/cobianet/cobia-collect</a></p>
       </footer>
-
-<div id="devLog" style="width: 90%; border: 1px solid red; height: 110px; padding: 10px; overflow: auto;">asdf</div>
 
     </div><!--/.fluid-container-->
     </div><!--/#postAuthDisplay-->
@@ -222,7 +238,6 @@
             }
             });
             request.fail(function(jqXHR, textStatus, errorThrown) {
-                devLog(jqXHR.responseText);
                 var s = String(jqXHR.responseText);
                 try {
                     jQuery.parseJSON(s);
@@ -246,7 +261,15 @@
 
                         var h = '<li class="nav-header">ZONES</li>';
                         for (var i in data.zones) {
-                            h += '<li><a href="#">'+data.zones[i].name+' ('+data.zones[i].numUp+'/'+data.zones[i].numTotal+')</a></li>';
+                            h += '<li><a href="#" onClick="zoneView(\''+data.zones[i]._id+'\');">'+data.zones[i].name+' ('+data.zones[i].numUp+'/'+data.zones[i].numTotal+')';
+
+                            if (data.zones[i].numDown>0) {
+                                h += ' <span style="float: right;" class="label label-important">Hosts Down</span>';
+                            } else {
+                                h += ' <span style="float: right;" class="label label-success">Stable</span>';
+                            }
+
+                            h += '</a></li>';
                         }
                         $('#zonesNav').html(h);
 
@@ -462,13 +485,217 @@
             });
         });
 
-        function loadZone(zoneId) {
+        function zoneView(zoneId) {
+
+            apiCall('/zone','GET',{'zoneId':zoneId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    $('#zoneViewTitle').html('Zone: '+data.zone.name+' ('+data.zone.numUp+'/'+data.zone.numTotal+')');
+                }
+
+            });
+
+            apiCall('/groups','GET',{'zoneId':zoneId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    var c = 0;
+                    var h = '<p><a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a></p><h2>Groups -></h2>';
+                    for (var i in data.groups) {
+
+                        if (c%3 == 0) {
+                            h += '<div class="row-fluid">';
+                        }
+
+                        h += '<div class="span4">';
+                        h += '<h3>'+data.groups[i].name+'</h3>';
+                        h += '<p>'+data.groups[i].notes+'</p>';
+                        h += '<p><span class="label label-success">'+data.groups[i].numUp+' up</span>';
+                        if (data.groups[i].numDown > 0) {
+                            h += ' <span class="label label-important">'+data.groups[i].numDown+' down</span>';
+                        }
+                        h += '</p>';
+                        h += '<p><a class="btn" href="#" onClick="groupView(\''+data.groups[i]._id+'\');">View group &raquo;</a></p>';
+                        h += '</div><!--/span-->';
+
+                        if (c%3 == 2) {
+                            h += '</div><!--/row-->';
+                        }
+
+                        c++;
+
+                    }
+
+                    $('#zoneViewGroups').html(h);
+
+                }
+
+            });
+
+            showView('zoneView');
+
         }
 
-        function loadGroup(groupId) {
+        function groupView(groupId) {
+
+            apiCall('/group','GET',{'groupId':groupId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    $('#groupViewTitle').html('Group: '+data.group.name+' ('+data.group.numUp+'/'+data.group.numTotal+')');
+                }
+
+            });
+
+            apiCall('/hosts','GET',{'groupId':groupId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    $('#groupViewGroups').html('');
+                    var c = 0;
+                    var h = '<p><a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a></p><h2>Hosts -></h2>';
+                    for (var i in data.hosts) {
+
+                        if (c%3 == 0) {
+                            h += '<div class="row-fluid">';
+                        }
+
+                        h += '<div class="span4">';
+                        h += '<h3>'+data.hosts[i].name+'</h3>';
+                        h += '<p>'+data.hosts[i].notes+'</p>';
+                        h += '<p><span class="label label-info">Login:</span> '+data.hosts[i].login+'</p>';
+                        h += '<p><span class="label label-info">Last Update:</span> '+data.hosts[i].lastUpdate+'</p>';
+                        h += '<p>';
+                        if (data.hosts[i].lastUpdate == undefined || data.hosts[i].lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
+                            h += '<span style="float: right;" class="label label-important">Down</span>';
+                        } else {
+                            h += '<span style="float: right;" class="label label-success">Stable</span>';
+                        }
+                        h += '</p>';
+                        h += '<p><a class="btn" href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">View host &raquo;</a></p>';
+                        h += '</div><!--/span-->';
+
+                        if (c%3 == 2) {
+                            h += '</div><!--/row-->';
+                        }
+
+                        c++;
+
+                    }
+
+                    $('#groupViewHosts').html(h);
+
+                }
+
+            });
+
+            showView('groupView');
+
         }
 
-        function loadHost(hostId) {
+        function hostView(hostId) {
+
+            apiCall('/host','GET',{'hostId':hostId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    var h = '<p><a href="#" onClick="deleteHost(\''+hostId+'\');" class="label label-warning">Delete Host</a></p><div>';
+                    h += '<h3>'+data.host.name+'</h3>';
+                    h += '<p>';
+                    if (data.host.lastUpdate == undefined || data.host.lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
+                        h += '<span class="label label-important">Down</span>';
+                    } else {
+                        h += '<span class="label label-success">Stable</span>';
+                    }
+                    h += '</p>';
+                    h += '<p>'+data.host.notes+'</p>';
+                    h += '<div class="row-fluid">';
+                    h += '<div class="span4"><span class="label label-info">Login:</span> '+data.host.login+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Key:</span> '+data.host.key+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Last Update:</span> '+data.host.lastUpdate+'</div>';
+                    h += '</div>';
+                    h += '<div class="row-fluid">';
+                    h += '<div class="span4"><span class="label label-info">Last Boot Request:</span> '+data.host.lastBootRequest+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Created At:</span> '+data.host.createdAt+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Uptime:</span> '+data.host.uptime+'</div>';
+                    h += '</div>';
+                    h += '<div class="row-fluid">';
+                    h += '<div class="span4"><span class="label label-info">Client Info:</span> '+data.host.clientInfo+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Version:</span> '+data.host.version+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Outside IP:</span> '+data.host.outsideIp+'</div>';
+                    h += '</div>';
+                    h += '<div class="row-fluid">';
+                    h += '<div class="span4"><span class="label label-info">WAN IP:</span> '+data.host.wanIp+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Latitude:</span> '+data.host.latitude+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Longitude:</span> '+data.host.longitude+'</div>';
+                    h += '</div>';
+                    h += '<div class="row-fluid">';
+                    h += '<div class="span4"><span class="label label-info">Channel:</span> '+data.host.channel+'</div>';
+                    h += '<div class="span4"><span class="label label-info">VLAN:</span> '+data.host.vlan+'</div>';
+                    h += '<div class="span4"><span class="label label-info">SSID:</span> '+data.host.ssid+'</div>';
+                    h += '</div>';
+                    h += '<div class="row-fluid">';
+                    h += '<div class="span4"><span class="label label-info">Encryption:</span> '+data.host.encryption+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Encryption Key:</span> '+data.host.encryptionKey+'</div>';
+                    h += '</div>';
+
+                    h += '</div>';
+
+                    $('#hostViewHost').html(h);
+
+                }
+
+            });
+
+            showView('hostView');
+        }
+
+        function deleteZone(zoneId) {
+            apiCall('/zone','DELETE',{'zoneId':zoneId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Zone Deleted');
+                    showView(null);
+                    loopData();
+                }
+
+            });
+        }
+
+        function deleteGroup(groupId) {
+            apiCall('/group','DELETE',{'groupId':groupId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Group Deleted');
+                    showView(null);
+                    loopData();
+                }
+
+            });
+        }
+
+        function deleteHost(hostId) {
+            apiCall('/host','DELETE',{'hostId':hostId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Host Deleted');
+                    showView(null);
+                    loopData();
+                }
+
+            });
         }
 
         // login if cookie exists
@@ -485,15 +712,13 @@
         }
 
         function showView(viewName) {
-            var views = ['newZoneView','newGroupView','newHostView'];
+            var views = ['newZoneView','newGroupView','newHostView','zoneView','groupView','hostView'];
             for (var i=0; i<views.length; i++) {
                 $('#'+views[i]).hide();
             }
-            $('#'+viewName).show('fast');
-        }
-
-        function devLog(str) {
-            $('#devLog').append('<p>'+str+'</p>');
+            if (viewName != null) {
+                $('#'+viewName).show('fast');
+            }
         }
 
     </script>
