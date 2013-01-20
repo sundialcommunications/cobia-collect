@@ -34,7 +34,7 @@ function checkParams(params, validator, cb) {
     var errorString = '';
 
     for (i=0; i<validator.length; i++) {
-        if (params[validator[i]] == undefined || params[validator[i]] == null) {
+        if (params[validator[i]] == undefined || params[validator[i]] == null || params[validator[i]] == '') {
             // value doesn't exist
             err = true;
             errorString += validator[i]+' ';
@@ -360,7 +360,7 @@ zoneId* - STR id of parent zone
 
 RESPONSE CODES
 200 - Valid Zone
-	returns json document zone
+	returns json document groups
 400 - Unauthorized
 	returns nothing
 */
@@ -379,7 +379,7 @@ router.get('/groups').bind(function (req, res, params) {
                                 if (err) {
                                     res.send(500, {}, {'error':err});
                                 } else {
-                                    res.send({'success':1, 'group':docs});
+                                    res.send({'success':1, 'groups':docs});
                                 }
                             });
                         });
@@ -706,7 +706,6 @@ ssid - STR ssid for host
 encryption - STR encryption type (psk, psk2, none)
 encryptionKey - STR encryption key
 groupId* - STR parent group id
-zoneId* - STR parent zone id
 
 RESPONSE CODES
 200 - Valid Zone
@@ -720,7 +719,7 @@ router.post('/host').bind(function (req, res, params) {
             async.series([
 
                 function(callback) {
-                    checkParams(params, ['login','key','name','notes','groupId','zoneId'], function (err) {
+                    checkParams(params, ['login','key','name','notes','groupId'], function (err) {
                         callback(err, '');
                     });
                 },
@@ -734,29 +733,10 @@ router.post('/host').bind(function (req, res, params) {
                 },
 
                 function(callback) {
-                    if (isValidMongoId(params.zoneId)) {
-                        callback(null, '');
-                    } else {
-                        callback('invalid zoneId', '');
-                    }
-                },
-
-                function(callback) {
-                    db.collection('zones', function (err, collection) {
-                        collection.find({'_id':new mongodb.ObjectID(params.zoneId)}).toArray(function(err, docs) {
-                            if (docs.length>0) {
-                                callback(null, '');
-                            } else {
-                                callback('that zoneId was not found', '');
-                            }
-                        });
-                    });
-                },
-                function(callback) {
                     db.collection('groups', function (err, collection) {
                         collection.find({'_id':new mongodb.ObjectID(params.groupId)}).toArray(function(err, docs) {
                             if (docs.length>0) {
-                                callback(null, '');
+                                callback(null, docs[0]);
                             } else {
                                 callback('that groupId was not found', '');
                             }
@@ -769,8 +749,9 @@ router.post('/host').bind(function (req, res, params) {
                 if (err) {
                     res.send(500, {}, {'error':err});
                 } else {
+                    zoneId = String(results[2].zoneId);
                     db.collection('hosts', function (err, collection) {
-                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(params.zoneId)}, function(err, docs) {
+                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(zoneId)}, function(err, docs) {
                             if (err) {
                                 res.send(500, {}, {'error':err});
                             } else {
@@ -888,11 +869,11 @@ require('http').createServer(function (request, response) {
     request.addListener('end', function () {
         // Dispatch the request to the router
         router.handle(request, body, function (result) {
-            console.log(request.method+' '+request.url);
             result.headers['Access-Control-Allow-Origin'] = '*';
             result.headers['Access-Control-Allow-Methods'] = '*';
             response.writeHead(result.status, result.headers);
             response.end(result.body);
+            console.log('###### '+request.method+' '+request.url+" ######\n"+result.body);
         });
     });
 

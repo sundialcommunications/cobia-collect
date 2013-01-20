@@ -42,10 +42,11 @@
         margin-bottom: 15px;
         padding: 7px 9px;
       }
+    .defHide {
+        display: none;
+    }
     #loginErr {
-        color: red;
-        font-size: .8em;
-        padding: 4px;
+        display: none;
     }
     #preAuthDisplay {
     }
@@ -78,7 +79,7 @@
         <h2 class="form-signin-heading">Please sign in</h2>
         <input id="loginUsername" type="text" class="input-block-level" placeholder="Email address">
         <input id="loginPassword" type="password" class="input-block-level" placeholder="Password">
-        <p id="loginErr"></p>
+        <p id="loginErr" class="alert"></p>
         <button id="loginButton" class="btn btn-large btn-primary" type="submit">Sign in</button>
       </form>
 
@@ -94,7 +95,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="#">cobia-collect</a>
+          <a class="brand" href="#" onClick="window.refresh();">cobia-collect</a>
           <div class="nav-collapse collapse">
             <p class="navbar-text pull-right">
               Logged in as <a href="#" id="logout" class="navbar-link"></a>
@@ -109,8 +110,6 @@
       </div>
     </div>
 
-<div id="devLog" style="width: 100%; border: 1px solid red; height: 110px;">asdf</div>
-
     <div class="container-fluid">
       <div class="row-fluid">
         <div class="span3">
@@ -121,7 +120,52 @@
             </ul>
           </div><!--/.well -->
         </div><!--/span-->
-        <div id="mainBlock" class="span9">
+        <div class="span9">
+
+        <!-- views -->
+
+        <div class="defHide" id="newZoneView">
+
+        <h2>New Zone</h2>
+        <input id="newZoneViewName" type="text" class="" placeholder="Name" /><br />
+        <input id="newZoneViewNotes" type="text" class="" placeholder="Notes" /><br />
+        <button id="newZoneViewButton" class="btn btn-large btn-primary" type="submit">Create Zone</button>
+
+        </div><!--newZoneView-->
+
+        <div class="defHide" id="newGroupView">
+
+        <h2>New Group</h2>
+        <input id="newGroupViewName" type="text" class="" placeholder="Name" /><br />
+        <input id="newGroupViewNotes" type="text" class="" placeholder="Notes" /><br />
+        <h4>Parent Zone</h4>
+        <select id="newGroupViewZoneId"></select><br />
+        <button id="newGroupViewButton" class="btn btn-large btn-primary" type="submit">Create Group</button>
+
+        </div><!--newGroupView-->
+
+        <div class="defHide" id="newHostView">
+
+        <h2>New Host</h2>
+        <input id="newHostViewLogin" type="text" class="" placeholder="Login" /><br />
+        <input id="newHostViewKey" type="text" class="" placeholder="Key" /><br />
+        <input id="newHostViewName" type="text" class="" placeholder="Name" /><br />
+        <input id="newHostViewNotes" type="text" class="" placeholder="Notes" /><br />
+        <input id="newHostViewLatitude" type="text" class="" placeholder="Latitude" /><br />
+        <input id="newHostViewLongitude" type="text" class="" placeholder="Longitude" /><br />
+        <input id="newHostViewChannel" type="text" class="" placeholder="Channel" /><br />
+        <input id="newHostViewVlan" type="text" class="" placeholder="VLAN" /><br />
+        <input id="newHostViewSsid" type="text" class="" placeholder="SSID" /><br />
+        <input id="newHostViewEncryption" type="text" class="" placeholder="Encryption" /><br />
+        <input id="newHostViewEncryptionKey" type="text" class="" placeholder="Encryption Key" /><br />
+        <h4>Parent Zone</h4>
+        <select id="newHostViewZoneId"></select><br />
+        <h4>Parent Group</h4>
+        <select id="newHostViewGroupId"></select><br />
+        <button id="newHostViewButton" class="btn btn-large btn-primary" type="submit">Create Host</button>
+
+        </div><!--newHostView-->
+
         </div><!--/span-->
       </div><!--/row-->
 
@@ -130,6 +174,8 @@
       <footer>
         <p><a href="https://github.com/cobianet/cobia-collect">https://github.com/cobianet/cobia-collect</a></p>
       </footer>
+
+<div id="devLog" style="width: 90%; border: 1px solid red; height: 110px; padding: 10px; overflow: auto;">asdf</div>
 
     </div><!--/.fluid-container-->
     </div><!--/#postAuthDisplay-->
@@ -176,7 +222,15 @@
             }
             });
             request.fail(function(jqXHR, textStatus, errorThrown) {
-                callback({'error':errorThrown});
+                devLog(jqXHR.responseText);
+                var s = String(jqXHR.responseText);
+                try {
+                    jQuery.parseJSON(s);
+                    var j = jQuery.parseJSON(s);
+                    callback({'error':j.error});
+                } catch (e) {
+                    callback({'error':errorThrown});
+                }
             });
 
         }
@@ -240,7 +294,6 @@
 
         }
 
-        // login
         $('#loginButton').on("click", function(event) {
             event.preventDefault();
 
@@ -257,6 +310,7 @@
 
                 } else {
                     $('#loginErr').html(err.error);
+                    $('#loginErr').show('fast');
                 }
 
             });
@@ -283,20 +337,129 @@
 
         $('#newZone').on("click", function(event) {
             event.preventDefault();
-            var h = '<h2>New Zone:</h2><input type="text" class="" placeholder="Zone Name" /><br /><input type="text" class="" placeholder="Zone Notes" /><br /><button class="btn btn-large btn-primary" type="submit">Create Zone</button>';
-            $('#mainBlock').html(h);
+            showView('newZoneView');
+        });
+
+        $('#newZoneViewButton').on("click", function(event) {
+            event.preventDefault();
+
+            apiCall('/zone','POST',{'name':$('#newZoneViewName').val(),'notes':$('#newZoneViewNotes').val()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    loopData();
+                    alert('Zone: '+$('#newZoneViewName').val()+' created');
+                    $('#newZoneViewName').val('');
+                    $('#newZoneViewNotes').val('');
+                }
+
+            });
+
         });
 
         $('#newGroup').on("click", function(event) {
             event.preventDefault();
-            var h = '<h2>New Group:</h2><input type="text" class="" placeholder="Group Name" /><br /><input type="text" class="" placeholder="Group Notes" /><br /><button class="btn btn-large btn-primary" type="submit">Create Group</button>';
-            $('#mainBlock').html(h);
+
+            // get zones for Parent Zone
+            apiCall('/zones','GET',{}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    $('#newGroupViewZoneId').children().remove();
+                    $('#newGroupViewZoneId').append('<option value="">Select a Zone</option>');
+                    for (var i in data.zones) {
+                        $('#newGroupViewZoneId').append('<option value="'+data.zones[i]._id+'">'+data.zones[i].name+'</option>');
+                    }
+                }
+
+            });
+
+            showView('newGroupView');
+        });
+
+        $('#newGroupViewButton').on("click", function(event) {
+            event.preventDefault();
+
+            apiCall('/group','POST',{'name':$('#newGroupViewName').val(),'notes':$('#newGroupViewNotes').val(),'zoneId':$('#newGroupViewZoneId').val()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Group: '+$('#newGroupViewName').val()+' created');
+                    $('#newGroupViewName').val('');
+                    $('#newGroupViewNotes').val('');
+                }
+
+            });
+
         });
 
         $('#newHost').on("click", function(event) {
             event.preventDefault();
-            var h = '<h2>New Host:</h2><input type="text" class="" placeholder="Host Name" /><br /><input type="text" class="" placeholder="Host Notes" /><br /><button class="btn btn-large btn-primary" type="submit">Create Host</button>';
-            $('#mainBlock').html(h);
+
+            // get zones for Parent Zone
+            apiCall('/zones','GET',{}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    $('#newHostViewZoneId').children().remove();
+                    $('#newHostViewZoneId').append('<option value="">Select a Zone</option>');
+                    for (var i in data.zones) {
+                        $('#newHostViewZoneId').append('<option value="'+data.zones[i]._id+'">'+data.zones[i].name+'</option>');
+                    }
+                }
+
+            });
+
+            showView('newHostView');
+        });
+
+        $('#newHostViewZoneId').change(function() {
+
+            // get groups for Parent Group
+            apiCall('/groups','GET',{'zoneId':$('#newHostViewZoneId').val()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    $('#newHostViewGroupId').children().remove();
+                    $('#newHostViewGroupId').append('<option value="">Select a Group</option>');
+                    for (var i in data.groups) {
+                        $('#newHostViewGroupId').append('<option value="'+data.groups[i]._id+'">'+data.groups[i].name+'</option>');
+                    }
+                }
+
+            });
+
+        });
+
+        $('#newHostViewButton').on("click", function(event) {
+            event.preventDefault();
+
+            apiCall('/host','POST',{'login':$('#newHostViewLogin').val(),'key':$('#newHostViewKey').val(),'name':$('#newHostViewName').val(),'notes':$('#newHostViewNotes').val(),'latitude':$('#newHostViewLatitude').val(),'longitude':$('#newHostViewLongitude').val(),'channel':$('#newHostViewChannel').val(),'vlan':$('#newHostViewVlan').val(),'ssid':$('#newHostViewSsid').val(),'encryption':$('#newHostViewEncryption').val(),'encryptionKey':$('#newHostViewEncryptionKey').val(),'groupId':$('#newHostViewGroupId').val()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    loopData();
+                    alert('Host: '+$('#newHostViewName').val()+' created');
+                    $('#newHostViewLogin').val('');
+                    $('#newHostViewKey').val('');
+                    $('#newHostViewName').val('');
+                    $('#newHostViewNotes').val('');
+                    $('#newHostViewLatitude').val('');
+                    $('#newHostViewLongitude').val('');
+                    $('#newHostViewChannel').val('');
+                    $('#newHostViewVlan').val('');
+                    $('#newHostViewSsid').val('');
+                    $('#newHostViewEncryption').val('');
+                    $('#newHostViewEncryptionKey').val('');
+                }
+
+            });
         });
 
         function loadZone(zoneId) {
@@ -319,6 +482,14 @@
                     $('#loginErr').html(err.error);
                 }
             });
+        }
+
+        function showView(viewName) {
+            var views = ['newZoneView','newGroupView','newHostView'];
+            for (var i=0; i<views.length; i++) {
+                $('#'+views[i]).hide();
+            }
+            $('#'+viewName).show('fast');
         }
 
         function devLog(str) {
