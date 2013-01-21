@@ -949,7 +949,7 @@ function upDownCount() {
             // update db
 
             db.collection('groups', function (err, collection) {
-                collection.update({},{'$set':{'numUp':0,'numDown':0,'numTotal':0}}, function(err) {
+                collection.update({},{'$set':{'numUp':0,'numDown':0,'numTotal':0}}, {'multi':true}, function(err) {
                 for (var l in groups) {
                     db.collection('groups', function (err, collection) {
                         collection.update({_id:new mongodb.ObjectID(l)},{'$set':groups[l]}, function(err) {
@@ -960,7 +960,7 @@ function upDownCount() {
             });
 
             db.collection('zones', function (err, collection) {
-                collection.update({},{'$set':{'numUp':0,'numDown':0,'numTotal':0}}, function(err) {
+                collection.update({},{'$set':{'numUp':0,'numDown':0,'numTotal':0}}, {'multi':true}, function(err) {
                 for (var l in zones) {
                     db.collection('zones', function (err, collection) {
                         collection.update({_id:new mongodb.ObjectID(l)},{'$set':zones[l]}, function(err) {

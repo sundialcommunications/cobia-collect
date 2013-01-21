@@ -53,6 +53,18 @@
     #postAuthDisplay {
         display: none;
     }
+    #zoneViewMap, #groupViewMap, #hostViewMap {
+        left: 10px;
+        right: 10px;
+        height: 250px;
+    }
+    #newHostViewMap {
+        width: 400px;
+        height: 600px;
+        float: left;
+        margin-left: 40px;
+        margin-top: 60px;
+    }
     </style>
     <!--<link href="css/bootstrap-responsive.css" rel="stylesheet">-->
 
@@ -146,6 +158,7 @@
 
         <div class="defHide" id="newHostView">
 
+        <div style="float: left;">
         <h2>New Host</h2>
         <input id="newHostViewLogin" type="text" class="" placeholder="Login" /><br />
         <input id="newHostViewKey" type="text" class="" placeholder="Key" /><br />
@@ -163,24 +176,26 @@
         <h4>Parent Group</h4>
         <select id="newHostViewGroupId"></select><br />
         <button id="newHostViewButton" class="btn btn-large btn-primary" type="submit">Create Host</button>
+        </div>
+        <div id="newHostViewMap"></div>
 
         </div><!--newHostView-->
 
         <div class="defHide" id="zoneView">
-          <div class="hero-unit">
-            <h1 id="zoneViewTitle"></h1>
-          </div>
+          <div id="zoneViewTitle"></div>
+          <div id="zoneViewMap"></div>
         <div id="zoneViewGroups"></div>
         </div><!--zoneView-->
 
         <div class="defHide" id="groupView">
-          <div class="hero-unit">
-            <h1 id="groupViewTitle"></h1>
-          </div>
+          <div id="groupViewTitle"></div>
+          <div id="groupViewMap"></div>
         <div id="groupViewHosts"></div>
         </div><!--groupView-->
 
         <div class="defHide" id="hostView">
+        <div id="hostViewTitle"></div>
+        <div id="hostViewMap"></div>
         <div id="hostViewHost"></div>
         </div><!--hostView-->
 
@@ -203,6 +218,7 @@
     <script src="js/jquery.cookie.js"></script>
     <script src="js/jquery.epochago.js"></script>
     <script src="js/bootstrap.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=&sensor=false"></script>
     <!--
     <script src="js/bootstrap-transition.js"></script>
     <script src="js/bootstrap-alert.js"></script>
@@ -222,6 +238,9 @@
 
         // server API endpoint for cobia-collect, standard port 8551
         var serverApi = 'http://collect.cobianet.com:8551';
+
+        // default map options
+        var defMapOptions = {center: new google.maps.LatLng(27.829, -97.060),zoom: 6,mapTypeId: google.maps.MapTypeId.HYBRID};
 
         // helper function for all API calls
         function apiCall(endpoint, requestType, requestData, callback) {
@@ -438,6 +457,30 @@
 
             });
 
+            function dMap() {
+
+                var map = new google.maps.Map(document.getElementById("newHostViewMap"), defMapOptions);
+                var marker = null;
+
+                if(navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+                        map.setZoom(12);
+                    });
+                }
+
+                google.maps.event.addListener(map, 'click', function(e) {
+                    if (marker != null) {
+                        marker.setMap(null);
+                    }
+                    $('#newHostViewLatitude').val(e.latLng.lat());
+                    $('#newHostViewLongitude').val(e.latLng.lng());
+                    marker = new google.maps.Marker({position:e.latLng,map:map});
+                });
+
+            }
+            setTimeout(dMap, 1000);
+
             showView('newHostView');
         });
 
@@ -488,12 +531,14 @@
 
         function zoneView(zoneId) {
 
+            $('#zoneViewMap').html('');
+
             apiCall('/zone','GET',{'zoneId':zoneId}, function (err, data) {
 
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#zoneViewTitle').html('Zone: '+data.zone.name+' ('+data.zone.numUp+'/'+data.zone.numTotal+')');
+                    $('#zoneViewTitle').html('<h2>Zone: '+data.zone.name+'</h2><p><span class="label label-success">'+data.zone.numUp+' up</span> <span class="label label-important">'+data.zone.numDown+' down</span> <a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a></p>');
                 }
 
             });
@@ -504,7 +549,7 @@
                     alert(err.error);
                 } else {
                     var c = 0;
-                    var h = '<p><a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a></p><h2>Groups -></h2>';
+                    var h = '<h2>Groups -></h2>';
                     for (var i in data.groups) {
 
                         if (c%3 == 0) {
@@ -530,6 +575,49 @@
 
                     }
 
+                    apiCall('/hostsForZone','GET',{'zoneId':zoneId}, function (err, data) {
+                        if (err) {
+                            alert(err.error);
+                        } else {
+
+                        function dMap() {
+                            var map = new google.maps.Map(document.getElementById("zoneViewMap"), defMapOptions);
+                            var LatLngList = new Array();
+
+                            for (var i in data.hosts) {
+                                if (data.hosts[i].latitude && data.hosts[i].longitude) {
+                                    var mo = {position:new google.maps.LatLng(data.hosts[i].latitude, data.hosts[i].longitude),map:map,title:data.hosts[i].name};
+                                    if (data.hosts[i].lastUpdate == undefined || data.hosts[i].lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
+                                        mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|B94A48';
+                                    } else {
+                                        mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
+                                    }
+                                    var marker = new google.maps.Marker(mo);
+
+                                    var c = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">'+data.hosts[i].name+'</a></h3>';
+
+                                    var iw = new google.maps.InfoWindow({content:c});
+                                    google.maps.event.addListener(marker, 'click', function() {
+                                        iw.open(map, marker);
+                                    });
+                                    LatLngList.push(new google.maps.LatLng(data.hosts[i].latitude, data.hosts[i].longitude));
+                                }
+                            }
+
+                            if (LatLngList.length>0) {
+                                var bounds = new google.maps.LatLngBounds();
+                                for (var i = 0, LtLgLen = LatLngList.length; i < LtLgLen; i++) {
+                                    bounds.extend(LatLngList[i]);
+                                }
+                                map.fitBounds(bounds);
+                            }
+
+                        }
+                        setTimeout(dMap, 1000);
+
+                        }
+                    });
+
                     $('#zoneViewGroups').html(h);
                     showView('zoneView');
 
@@ -541,12 +629,14 @@
 
         function groupView(groupId) {
 
+            $('#groupViewMap').html('');
+
             apiCall('/group','GET',{'groupId':groupId}, function (err, data) {
 
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#groupViewTitle').html('Group: '+data.group.name+' ('+data.group.numUp+'/'+data.group.numTotal+')');
+                    $('#groupViewTitle').html('<h2>Group: '+data.group.name+'</h2><p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a></p>');
                 }
 
             });
@@ -558,7 +648,7 @@
                 } else {
                     $('#groupViewGroups').html('');
                     var c = 0;
-                    var h = '<p><a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a></p><h2>Hosts -></h2>';
+                    var h = '<h2>Hosts -></h2>';
                     for (var i in data.hosts) {
 
                         if (c%3 == 0) {
@@ -588,6 +678,41 @@
 
                     }
 
+                    function dMap() {
+                        var map = new google.maps.Map(document.getElementById("groupViewMap"), defMapOptions);
+                        var LatLngList = new Array();
+
+                        for (var i in data.hosts) {
+                            if (data.hosts[i].latitude && data.hosts[i].longitude) {
+                                var mo = {position:new google.maps.LatLng(data.hosts[i].latitude, data.hosts[i].longitude),map:map,title:data.hosts[i].name};
+                                if (data.hosts[i].lastUpdate == undefined || data.hosts[i].lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
+                                    mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|B94A48';
+                                } else {
+                                    mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
+                                }
+                                var marker = new google.maps.Marker(mo);
+
+                                var c = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">'+data.hosts[i].name+'</a></h3>';
+
+                                var iw = new google.maps.InfoWindow({content:c});
+                                google.maps.event.addListener(marker, 'click', function() {
+                                    iw.open(map, marker);
+                                });
+                                LatLngList.push(new google.maps.LatLng(data.hosts[i].latitude, data.hosts[i].longitude));
+                            }
+                        }
+
+                        if (LatLngList.length>0) {
+                            var bounds = new google.maps.LatLngBounds();
+                            for (var i = 0, LtLgLen = LatLngList.length; i < LtLgLen; i++) {
+                                bounds.extend(LatLngList[i]);
+                            }
+                            map.fitBounds(bounds);
+                        }
+
+                    }
+                    setTimeout(dMap, 1000);
+
                     $('#groupViewHosts').html(h);
                     showView('groupView');
 
@@ -599,20 +724,24 @@
 
         function hostView(hostId) {
 
+            $('#hostViewMap').html('');
+
             apiCall('/host','GET',{'hostId':hostId}, function (err, data) {
 
                 if (err) {
                     alert(err.error);
                 } else {
-                    var h = '<p><a href="#" onClick="deleteHost(\''+hostId+'\');" class="label label-warning">Delete Host</a></p><div>';
-                    h += '<h3>'+data.host.name+'</h3>';
-                    h += '<p>';
+                    var h = '<h3>'+data.host.name+'</h3>';
+                    h += '<p><a href="#" onClick="deleteHost(\''+hostId+'\');" class="label label-warning">Delete Host</a>';
+                    h += ' ';
                     if (data.host.lastUpdate == undefined || data.host.lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
                         h += '<span class="label label-important">Down</span>';
                     } else {
                         h += '<span class="label label-success">Stable</span>';
                     }
                     h += '</p>';
+                    $('#hostViewTitle').html(h);
+                    h = '';
                     h += '<p>'+data.host.notes+'</p>';
                     h += '<div class="row-fluid">';
                     h += '<div class="span4"><span class="label label-info">Login:</span> '+data.host.login+'</div>';
@@ -644,7 +773,38 @@
                     h += '<div class="span4"><span class="label label-info">Encryption Key:</span> '+data.host.encryptionKey+'</div>';
                     h += '</div>';
 
-                    h += '</div>';
+                    function dMap() {
+                        var map = new google.maps.Map(document.getElementById("hostViewMap"), defMapOptions);
+                        var LatLngList = new Array();
+
+                        if (data.host.latitude && data.host.longitude) {
+                            var mo = {position:new google.maps.LatLng(data.host.latitude, data.host.longitude),map:map,title:data.host.name};
+                            if (data.host.lastUpdate == undefined || data.host.lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
+                                mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|B94A48';
+                            } else {
+                                mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
+                            }
+                            var marker = new google.maps.Marker(mo);
+
+                            var c = '<h3>host: <a href="#" onClick="hostView(\''+data.host._id+'\');">'+data.host.name+'</a></h3>';
+
+                            var iw = new google.maps.InfoWindow({content:c});
+                            google.maps.event.addListener(marker, 'click', function() {
+                                iw.open(map, marker);
+                            });
+                            LatLngList.push(new google.maps.LatLng(data.host.latitude, data.host.longitude));
+                        }
+
+                        if (LatLngList.length>0) {
+                            var bounds = new google.maps.LatLngBounds();
+                            for (var i = 0, LtLgLen = LatLngList.length; i < LtLgLen; i++) {
+                                bounds.extend(LatLngList[i]);
+                            }
+                            map.fitBounds(bounds);
+                        }
+
+                    }
+                    setTimeout(dMap, 1000);
 
                     $('#hostViewHost').html(h);
                     showView('hostView');
