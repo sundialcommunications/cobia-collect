@@ -65,6 +65,14 @@
         margin-left: 40px;
         margin-top: 60px;
     }
+    .notesHolder {
+        max-height: 100px;
+        overflow: auto;
+    }
+    .editable {
+        padding: 4px;
+        border: 1px dotted #ccc;
+    }
     </style>
     <!--<link href="css/bootstrap-responsive.css" rel="stylesheet">-->
 
@@ -130,8 +138,8 @@
             </ul>
             <ul id="adminNav" class="nav nav-list">
               <li class="nav-header">ADMIN</li>
-              <li><a href="#">Accounts</a></li>
-              <li><a href="#">Write Log</a></li>
+              <li><a href="#" onClick="accountsView();">Accounts</a></li>
+              <li><a href="#" onClick="writeLogView();">Write Log</a></li>
             </ul>
             <ul id="colsNav" class="nav nav-list">
             </ul>
@@ -145,7 +153,7 @@
 
         <h2>New Zone</h2>
         <input id="newZoneViewName" type="text" class="" placeholder="Name" /><br />
-        <input id="newZoneViewNotes" type="text" class="" placeholder="Notes" /><br />
+        <textarea id="newZoneViewNotes" placeholder="Notes" /></textarea><br />
         <button id="newZoneViewButton" class="btn btn-large btn-primary" type="submit">Create Zone</button>
 
         </div><!--newZoneView-->
@@ -154,7 +162,7 @@
 
         <h2>New Group</h2>
         <input id="newGroupViewName" type="text" class="" placeholder="Name" /><br />
-        <input id="newGroupViewNotes" type="text" class="" placeholder="Notes" /><br />
+        <textarea id="newGroupViewNotes" placeholder="Notes" /></textarea><br />
         <h4>Parent Zone</h4>
         <select id="newGroupViewZoneId"></select><br />
         <button id="newGroupViewButton" class="btn btn-large btn-primary" type="submit">Create Group</button>
@@ -168,7 +176,7 @@
         <input id="newHostViewLogin" type="text" class="" placeholder="Login" /><br />
         <input id="newHostViewKey" type="text" class="" placeholder="Key" /><br />
         <input id="newHostViewName" type="text" class="" placeholder="Name" /><br />
-        <input id="newHostViewNotes" type="text" class="" placeholder="Notes" /><br />
+        <textarea id="newHostViewNotes" placeholder="Notes" /></textarea><br />
         <input id="newHostViewLatitude" type="text" class="" placeholder="Latitude" /><br />
         <input id="newHostViewLongitude" type="text" class="" placeholder="Longitude" /><br />
         <input id="newHostViewChannel" type="text" class="" placeholder="Channel" /><br />
@@ -194,7 +202,9 @@
 
         <div class="defHide" id="groupView">
           <div id="groupViewTitle"></div>
+          <div id="groupViewUD"></div>
           <div id="groupViewMap"></div>
+          <div id="groupViewNotes"></div>
         <div id="groupViewHosts"></div>
         </div><!--groupView-->
 
@@ -203,6 +213,22 @@
         <div id="hostViewMap"></div>
         <div id="hostViewHost"></div>
         </div><!--hostView-->
+
+        <div class="defHide" id="accountsView">
+
+        <h2>Current Admins</h2>
+        <div id="accountsViewContent"></div>
+
+        <h2>New Admin</h2>
+        <input id="accountsViewUsername" type="text" class="" placeholder="Username" /><br />
+        <input id="accountsViewPassword" type="text" class="" placeholder="Password" /><br />
+        <button id="accountsViewButton" class="btn btn-large btn-primary" type="submit">Create Admin</button>
+
+        </div><!--accountsView-->
+
+        <div class="defHide" id="writeLogView">
+        <div id="writeLogViewContent"></div>
+        </div><!--writeLogView-->
 
         </div><!--/span-->
       </div><!--/row-->
@@ -519,16 +545,11 @@
                     loopData();
                     alert('Host: '+$('#newHostViewName').val()+' created');
                     $('#newHostViewLogin').val('');
-                    $('#newHostViewKey').val('');
                     $('#newHostViewName').val('');
                     $('#newHostViewNotes').val('');
                     $('#newHostViewLatitude').val('');
                     $('#newHostViewLongitude').val('');
                     $('#newHostViewChannel').val('');
-                    $('#newHostViewVlan').val('');
-                    $('#newHostViewSsid').val('');
-                    $('#newHostViewEncryption').val('');
-                    $('#newHostViewEncryptionKey').val('');
                 }
 
             });
@@ -543,7 +564,7 @@
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#zoneViewTitle').html('<h2>Zone: '+data.zone.name+'</h2><p><span class="label label-success">'+data.zone.numUp+' up</span> <span class="label label-important">'+data.zone.numDown+' down</span> <a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a></p>');
+                    $('#zoneViewTitle').html('<h2>Zone: '+data.zone.name+'</h2><p><span class="label label-success">'+data.zone.numUp+' up</span> <span class="label label-important">'+data.zone.numDown+' down</span> <a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a></p><p><pre class="notesHolder">'+data.zone.notes+'</pre></p>');
                 }
 
             });
@@ -563,12 +584,12 @@
 
                         h += '<div class="span4">';
                         h += '<h3>'+data.groups[i].name+'</h3>';
-                        h += '<p>'+data.groups[i].notes+'</p>';
                         h += '<p><span class="label label-success">'+data.groups[i].numUp+' up</span>';
                         if (data.groups[i].numDown > 0) {
                             h += ' <span class="label label-important">'+data.groups[i].numDown+' down</span>';
                         }
                         h += '</p>';
+                        h += '<p><pre class="notesHolder">'+data.groups[i].notes+'</pre></p>';
                         h += '<p><a class="btn" href="#" onClick="groupView(\''+data.groups[i]._id+'\');">View group &raquo;</a></p>';
                         h += '</div><!--/span-->';
 
@@ -598,11 +619,12 @@
                                         mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
                                     }
                                     var marker = new google.maps.Marker(mo);
+                                    marker.html = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">'+data.hosts[i].name+'</a></h3>';
+                                    var iw = new google.maps.InfoWindow({content:'loading...'});
 
                                     google.maps.event.addListener(marker, 'click', function() {
-                                        var c = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">'+data.hosts[i].name+'</a></h3>';
-                                        var iw = new google.maps.InfoWindow({content:c});
-                                        iw.open(map, marker);
+                                        iw.open(map, this);
+                                        iw.setContent(this.html);
                                     });
                                     LatLngList.push(new google.maps.LatLng(data.hosts[i].latitude, data.hosts[i].longitude));
                                 }
@@ -640,7 +662,8 @@
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#groupViewTitle').html('<h2>Group: '+data.group.name+'</h2><p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a></p>');
+                    $('#groupViewTitle').html('<h2>Group: '+data.group.name+'</h2>');
+                    $('#groupViewNotes').html('<p><pre class="notesHolder">'+data.group.notes+'</pre></p>');
                 }
 
             });
@@ -650,7 +673,10 @@
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#groupViewGroups').html('');
+                    data.group = {};
+                    data.group.numUp = 0;
+                    data.group.numDown = 0;
+                    data.group.numTotal = 0;
                     var c = 0;
                     var h = '<h2>Hosts -></h2>';
                     for (var i in data.hosts) {
@@ -661,15 +687,18 @@
 
                         h += '<div class="span4">';
                         h += '<h3>'+data.hosts[i].name+'</h3>';
-                        h += '<p>'+data.hosts[i].notes+'</p>';
+                        h += '<p><pre class="notesHolder">'+data.hosts[i].notes+'</pre></p>';
                         h += '<p><span class="label label-info">Login:</span> '+data.hosts[i].login+'</p>';
                         h += '<p><span class="label label-info">Last Update:</span> <span class="epochago">'+data.hosts[i].lastUpdate+'</span></p>';
                         h += '<p>';
                         if (data.hosts[i].lastUpdate == undefined || data.hosts[i].lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
                             h += '<span style="float: right;" class="label label-important">Down</span>';
+                            data.group.numDown += 1;
                         } else {
                             h += '<span style="float: right;" class="label label-success">Stable</span>';
+                            data.group.numUp += 1;
                         }
+                        data.group.numTotal += 1;
                         h += '</p>';
                         h += '<p><a class="btn" href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">View host &raquo;</a></p>';
                         h += '</div><!--/span-->';
@@ -681,6 +710,8 @@
                         c++;
 
                     }
+
+                    $('#groupViewUD').html('<p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a></p>');
 
                     function dMap() {
                         var map = new google.maps.Map(document.getElementById("groupViewMap"), defMapOptions);
@@ -695,12 +726,12 @@
                                     mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
                                 }
                                 var marker = new google.maps.Marker(mo);
+                                marker.html = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">'+data.hosts[i].name+'</a></h3>';
+                                var iw = new google.maps.InfoWindow({content:'loading...'});
 
-                                var c = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\');">'+data.hosts[i].name+'</a></h3>';
-
-                                var iw = new google.maps.InfoWindow({content:c});
                                 google.maps.event.addListener(marker, 'click', function() {
-                                    iw.open(map, marker);
+                                    iw.open(map, this);
+                                    iw.setContent(this.html);
                                 });
                                 LatLngList.push(new google.maps.LatLng(data.hosts[i].latitude, data.hosts[i].longitude));
                             }
@@ -746,7 +777,7 @@
                     h += '</p>';
                     $('#hostViewTitle').html(h);
                     h = '';
-                    h += '<p>'+data.host.notes+'</p>';
+                    h += '<p><pre class="notesHolder">'+data.host.notes+'</pre></p>';
                     h += '<div class="row-fluid">';
                     h += '<div class="span4"><span class="label label-info">Login:</span> '+data.host.login+'</div>';
                     h += '<div class="span4"><span class="label label-info">Key:</span> '+data.host.key+'</div>';
@@ -768,7 +799,7 @@
                     h += '<div class="span4"><span class="label label-info">Longitude:</span> '+data.host.longitude+'</div>';
                     h += '</div>';
                     h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Channel:</span> '+data.host.channel+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Channel:</span> <span class="editable" contenteditable="true">'+data.host.channel+'</span></div>';
                     h += '<div class="span4"><span class="label label-info">VLAN:</span> '+data.host.vlan+'</div>';
                     h += '<div class="span4"><span class="label label-info">SSID:</span> '+data.host.ssid+'</div>';
                     h += '</div>';
@@ -861,6 +892,114 @@
             });
         }
 
+        function accountsView() {
+
+            $('#accountsViewContent').html('');
+
+            apiCall('/admins','GET',{}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+
+                    var h = '';
+
+                    for (var i=0; i<data.admins.length; i++) {
+
+                        h += '<div style="width: 400px;" class="alert alert-info">';
+                        h += '<h4 style="float: left;">' + data.admins[i].username;
+                        h += ' (<a href="#" onClick="deleteAdmin(\''+data.admins[i].username+'\');">X</a>)</h4>';
+                        if (data.admins[i].readOnly == 1) {
+                            h += '<a href="#" onClick="setAdminViewOnly(\''+data.admins[i].username+'\',0);" style="float: right;" class="label label-important">READ ONLY</a>';
+                        } else {
+                            h += '<a href="#" onClick="setAdminViewOnly(\''+data.admins[i].username+'\',1);" style="float: right;" class="label label-success">FULL ADMIN</a>';
+                        }
+                        h += '<br style="clear: both;" /></div>';
+
+                    }
+
+                    $('#accountsViewContent').html(h);
+                    showView('accountsView');
+
+                }
+
+            });
+
+        }
+
+        function deleteAdmin(username) {
+            apiCall('/admin','DELETE',{'adminUsername':username}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Admin Deleted');
+                    accountsView();
+                }
+
+            });
+        }
+
+        function setAdminViewOnly(username,v) {
+            apiCall('/admin','PUT',{'adminUsername':username,'adminReadOnly':v}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    accountsView();
+                }
+
+            });
+        }
+
+        $('#accountsViewButton').on("click", function(event) {
+            event.preventDefault();
+
+            apiCall('/admin','POST',{'adminUsername':$('#accountsViewUsername').val(),'adminPassword':$('#accountsViewPassword').val(),'adminReadOnly':1}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Admin: '+$('#accountsViewUsername').val()+' created');
+                    $('#accountsViewUsername').val('');
+                    $('#accountsViewPassword').val('');
+                    accountsView();
+                }
+
+            });
+
+        });
+
+        function writeLogView() {
+
+            $('#writeLogViewContent').html('');
+
+            apiCall('/adminLog','GET',{}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+
+                    var h = '';
+
+                    for (var i=0; i<data.adminLog.length; i++) {
+
+                        h += '<div class="alert alert-success">';
+                        h += '<h4>' + data.adminLog[i].username + ' <span class="epochago">'+data.adminLog[i].ts+'</span></h4>';
+                        h += '<p>' + data.adminLog[i].request + '</p>';
+                        h += '</div>';
+
+                    }
+
+                    $('#writeLogViewContent').html(h);
+                    showView('writeLogView');
+
+                }
+
+            });
+
+        }
+
         // login if cookie exists
         if ($.cookie('username') && $.cookie('password')) {
             $('#loginUsername').val($.cookie('username'));
@@ -875,7 +1014,7 @@
         }
 
         function showView(viewName) {
-            var views = ['newZoneView','newGroupView','newHostView','zoneView','groupView','hostView'];
+            var views = ['newZoneView','newGroupView','newHostView','zoneView','groupView','hostView','accountsView','writeLogView'];
             for (var i=0; i<views.length; i++) {
                 $('#'+views[i]).hide();
             }

@@ -139,26 +139,26 @@ function auth(username, password, writePermReq, req, res, callback) {
 	db.collection('admins', function (err, collection) {
 		collection.find({'username':username}).toArray(function(err, docs) {
             if (docs.length>0) {
-                var bhash = bcrypt.hashSync(password, 8);
                 var match = bcrypt.compareSync(password, docs[0].password);
 			    if (docs.length == 0 || match == false) {
                     res.send(401);
-				    //err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
-			    }
-                if (docs[0].readOnly == 1 && writePermReq == true) {
+			    } else if (docs[0].readOnly == 1 && writePermReq == true) {
                     res.send(500, {}, {'error':'you have no permission to do that'});
-                } else if (writePermReq == true) {
-                    // log admin write activity
-                    db.collection('adminWriteLog', function (err, collection) {
-                        collection.insert({'username':username, 'request':String(req.method+' '+req.url.path), 'ts':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
+                } else {
+
+        			callback(docs);
+
+                    if (writePermReq == true) {
+                        // log admin write activity
+                        db.collection('adminWriteLog', function (err, collection) {
+                            collection.insert({'username':username, 'request':String(req.method+' '+req.url.pathname), 'ts':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
+                            });
                         });
-                    });
+                    }
                 }
             } else {
                 res.send(401);
-				//err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
             }
-			callback(docs);
 		});
 	});
 
@@ -195,7 +195,7 @@ REQUEST URL PARAMS
 
 RESPONSE CODES
 200 - Valid Zone
-	returns json document with all admins
+	returns json document with adminLog
 400 - Unauthorized
 	returns nothing
 */
@@ -203,7 +203,7 @@ router.get('/adminLog').bind(function (req, res, params) {
 	auth(params.username, params.password, true, req, res, function (docs) {
 
             db.collection('adminWriteLog', function (err, collection) {
-                collection.find({}).limit(50).toArray(function(err, docs) {
+                collection.find({}).sort({'_id':-1}).limit(50).toArray(function(err, docs) {
                     if (err) {
                         res.send(500, {}, {'error':err});
                     } else {
@@ -295,7 +295,7 @@ REQUEST URL PARAMS
 REQUEST POST PARAMS
 adminUsername* - STR name of the admin
 adminPassword* - STR password of the admin
-adminReadOnly* - BOOLEAN true means admin cannot write/modify
+adminReadOnly* - BOOLEAN admin readOnly status
 
 RESPONSE CODES
 200 - Valid Zone
@@ -313,10 +313,68 @@ router.post('/admin').bind(function (req, res, params) {
                 } else {
 
                     db.collection('admins', function (err, collection) {
-                        if (params.adminReadOnly != 1) {
-                            params.adminReadOnly = 0;
+                        if (params.adminReadOnly != 0) {
+                            params.adminReadOnly = 1;
                         }
                         collection.insert({'username':params.adminUsername, 'password':bcrypt.hashSync(params.adminPassword, 8), 'readOnly':params.adminReadOnly}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'admin':docs[0]});
+                            }
+                        });
+                    });
+
+                }
+            });
+
+	});
+});
+
+/*
+PUT /admin - update an admin
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+
+REQUEST POST PARAMS
+adminUsername* - STR name of the admin
+adminPassword - STR password of the admin
+adminReadOnly - BOOLEAN admin readOnly status
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.put('/admin').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
+
+            async.series([
+                function(callback) {
+                    checkParams(params, ['adminUsername'], function (err) {
+                        callback(err, '');
+                    });
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else if (params.username == params.adminUsername && params.adminReadOnly != undefined) {
+                    res.send(500, {}, {'error':'you cannot change your readOnly state, you will lock yourself out'});
+                } else {
+
+                    db.collection('admins', function (err, collection) {
+                        var i = {};
+                        if (params.adminPassword != undefined) {
+                            i.password = bcrypt.hashSync(params.adminPassword, 8);
+                        }
+                        if (params.adminReadOnly != undefined) {
+                            i.readOnly = params.adminReadOnly;
+                        }
+                        collection.update({'username':params.adminUsername}, {'$set':i}, function(err, docs) {
                             if (err) {
                                 res.send(500, {}, {'error':err});
                             } else {
@@ -352,6 +410,8 @@ router.del('/admin').bind(function (req, res, params) {
 
                 if (err) {
                     res.send(500, {}, {'error':err});
+                } else if (params.username == params.adminUsername) {
+                    res.send(500, {}, {'error':'you cannot delete yourself'});
                 } else {
                     try {
                         db.collection('admins', function (err, collection) {
@@ -542,6 +602,7 @@ router.del('/zone').bind(function (req, res, params) {
                     });
                 }
             });
+
 	});
 });
 
