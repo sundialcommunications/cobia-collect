@@ -201,6 +201,7 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="js/jquery-1.9.0.min.js"></script>
     <script src="js/jquery.cookie.js"></script>
+    <script src="js/jquery.epochago.js"></script>
     <script src="js/bootstrap.js"></script>
     <!--
     <script src="js/bootstrap-transition.js"></script>
@@ -530,12 +531,11 @@
                     }
 
                     $('#zoneViewGroups').html(h);
+                    showView('zoneView');
 
                 }
 
             });
-
-            showView('zoneView');
 
         }
 
@@ -569,7 +569,7 @@
                         h += '<h3>'+data.hosts[i].name+'</h3>';
                         h += '<p>'+data.hosts[i].notes+'</p>';
                         h += '<p><span class="label label-info">Login:</span> '+data.hosts[i].login+'</p>';
-                        h += '<p><span class="label label-info">Last Update:</span> '+data.hosts[i].lastUpdate+'</p>';
+                        h += '<p><span class="label label-info">Last Update:</span> <span class="epochago">'+data.hosts[i].lastUpdate+'</span></p>';
                         h += '<p>';
                         if (data.hosts[i].lastUpdate == undefined || data.hosts[i].lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
                             h += '<span style="float: right;" class="label label-important">Down</span>';
@@ -589,12 +589,11 @@
                     }
 
                     $('#groupViewHosts').html(h);
+                    showView('groupView');
 
                 }
 
             });
-
-            showView('groupView');
 
         }
 
@@ -618,12 +617,12 @@
                     h += '<div class="row-fluid">';
                     h += '<div class="span4"><span class="label label-info">Login:</span> '+data.host.login+'</div>';
                     h += '<div class="span4"><span class="label label-info">Key:</span> '+data.host.key+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Last Update:</span> '+data.host.lastUpdate+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Last Update:</span> <span class="epochago">'+data.host.lastUpdate+'</span></div>';
                     h += '</div>';
                     h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Last Boot Request:</span> '+data.host.lastBootRequest+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Created At:</span> '+data.host.createdAt+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Uptime:</span> '+data.host.uptime+'</div>';
+                    h += '<div class="span4"><span class="label label-info">Last Boot Request:</span> <span class="epochago">'+data.host.lastBootRequest+'</span></div>';
+                    h += '<div class="span4"><span class="label label-info">Created At:</span> <span class="epochago">'+data.host.createdAt+'</span></div>';
+                    h += '<div class="span4"><span class="label label-info">Uptime:</span> '+Math.round((data.host.uptime/60/60/24)*100)/100+' days</div>';
                     h += '</div>';
                     h += '<div class="row-fluid">';
                     h += '<div class="span4"><span class="label label-info">Client Info:</span> '+data.host.clientInfo+'</div>';
@@ -648,12 +647,12 @@
                     h += '</div>';
 
                     $('#hostViewHost').html(h);
+                    showView('hostView');
 
                 }
 
             });
 
-            showView('hostView');
         }
 
         function deleteZone(zoneId) {
@@ -719,6 +718,7 @@
             if (viewName != null) {
                 $('#'+viewName).show('fast');
             }
+            $('.epochago').epochago();
         }
 
     </script>
