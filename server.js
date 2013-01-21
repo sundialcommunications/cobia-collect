@@ -131,7 +131,7 @@ for any method which requires authorization, simple provide the following 2 para
 username
 password
 */
-function auth(username, password, res, callback) {
+function auth(username, password, writePermReq, req, res, callback) {
     if (username == undefined || password == undefined) {
 		res.send(401);
     } else {
@@ -145,6 +145,15 @@ function auth(username, password, res, callback) {
                     res.send(401);
 				    //err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
 			    }
+                if (docs[0].readOnly == 1 && writePermReq == true) {
+                    res.send(500, {}, {'error':'you have no permission to do that'});
+                } else if (writePermReq == true) {
+                    // log admin write activity
+                    db.collection('adminWriteLog', function (err, collection) {
+                        collection.insert({'username':username, 'request':String(req.method+' '+req.url.path), 'ts':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
+                        });
+                    });
+                }
             } else {
                 res.send(401);
 				//err = 'incorrect authentication credentials for '+username+' : '+password+'/'+bhash;
@@ -172,8 +181,194 @@ RESPONSE CODES
 	returns {error:err}
 */
 router.get('/auth').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (docs) {
+	auth(params.username, params.password, false, req, res, function (docs) {
         res.send({'success':1});
+	});
+});
+
+/*
+GET /adminLog - get adminLog
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document with all admins
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/adminLog').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (docs) {
+
+            db.collection('adminWriteLog', function (err, collection) {
+                collection.find({}).limit(50).toArray(function(err, docs) {
+                    if (err) {
+                        res.send(500, {}, {'error':err});
+                    } else {
+                        res.send({'success':1, 'adminLog':docs});
+                    }
+                });
+            });
+
+	});
+});
+
+/*
+GET /admins - get all admins
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document with all admins
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/admins').bind(function (req, res, params) {
+	auth(params.username, params.password, false, req, res, function (docs) {
+
+            db.collection('admins', function (err, collection) {
+                collection.find({}).toArray(function(err, docs) {
+                    if (err) {
+                        res.send(500, {}, {'error':err});
+                    } else {
+                        res.send({'success':1, 'admins':docs});
+                    }
+                });
+            });
+
+	});
+});
+
+/*
+GET /admin - get an admin
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+adminUsername*
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/admin').bind(function (req, res, params) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
+
+            checkParams(params, ['adminUsername'], function (err) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+                    try {
+                        db.collection('admins', function (err, collection) {
+                            collection.find({'username':params.adminUsername}).toArray(function(err, docs) {
+                                if (err) {
+                                    res.send(500, {}, {'error':err});
+                                } else {
+                                    res.send({'success':1, 'admin':docs[0]});
+                                }
+                            });
+                        });
+                    } catch (err) {
+                        res.send(500, {}, {'error':err});
+                    }
+                }
+            });
+
+	});
+});
+
+/*
+POST /admin - create an admin
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+
+REQUEST POST PARAMS
+adminUsername* - STR name of the admin
+adminPassword* - STR password of the admin
+adminReadOnly* - BOOLEAN true means admin cannot write/modify
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.post('/admin').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
+
+            checkParams(params, ['adminUsername','adminPassword','adminReadOnly'], function (err) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+
+                    db.collection('admins', function (err, collection) {
+                        if (params.adminReadOnly != 1) {
+                            params.adminReadOnly = 0;
+                        }
+                        collection.insert({'username':params.adminUsername, 'password':bcrypt.hashSync(params.adminPassword, 8), 'readOnly':params.adminReadOnly}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'admin':docs[0]});
+                            }
+                        });
+                    });
+
+                }
+            });
+
+	});
+});
+
+/*
+DELETE /admin - delete an admin
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+adminUsername* - STR name of the admin
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.del('/admin').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
+
+            checkParams(params, ['adminUsername'], function (err) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+                    try {
+                        db.collection('admins', function (err, collection) {
+                            collection.remove({'username':params.adminUsername}, function(err) {
+                                if (err) {
+                                    res.send(500, {}, {'error':err});
+                                } else {
+                                    res.send({'success':1});
+                                }
+                            });
+                        });
+                    } catch (err) {
+                        res.send(500, {}, {'error':err});
+                    }
+                }
+            });
+
 	});
 });
 
@@ -191,7 +386,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/zones').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (docs) {
+	auth(params.username, params.password, false, req, res, function (docs) {
 
             db.collection('zones', function (err, collection) {
                 collection.find({}).toArray(function(err, docs) {
@@ -221,7 +416,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
@@ -266,7 +461,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             checkParams(params, ['name','notes'], function (err) {
 
@@ -305,7 +500,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -365,7 +560,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/groups').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
@@ -407,7 +602,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             checkParams(params, ['groupId'], function (err) {
 
@@ -454,7 +649,7 @@ RESPONSE CODES
 */
 
 router.post('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -515,7 +710,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -575,7 +770,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/hosts').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             checkParams(params, ['groupId'], function (err) {
 
@@ -617,7 +812,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/hostsForZone').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
@@ -659,7 +854,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             checkParams(params, ['hostId'], function (err) {
 
@@ -714,7 +909,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             async.series([
 
@@ -780,7 +975,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             checkParams(params, ['hostId'], function (err) {
 
@@ -821,7 +1016,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/globalCollectors').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
 
             res.send({'success':1, 'collectors':validCollectors});
 
@@ -845,7 +1040,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/collectors ').bind(function (req, res, params) {
-	auth(params.username, params.password, res, function (err, docs) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
         res.send({'success':1});
 	});
 });
