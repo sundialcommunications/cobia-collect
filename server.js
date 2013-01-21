@@ -235,7 +235,7 @@ router.get('/zone').bind(function (req, res, params) {
                                 if (err) {
                                     res.send(500, {}, {'error':err});
                                 } else {
-                                    res.send({'success':1, 'group':docs[0]});
+                                    res.send({'success':1, 'zone':docs[0]});
                                 }
                             });
                         });
@@ -751,7 +751,7 @@ router.post('/host').bind(function (req, res, params) {
                 } else {
                     zoneId = String(results[2].zoneId);
                     db.collection('hosts', function (err, collection) {
-                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(zoneId)}, function(err, docs) {
+                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(zoneId), 'reboot':1, 'createdAt':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
                             if (err) {
                                 res.send(500, {}, {'error':err});
                             } else {
@@ -967,5 +967,7 @@ function upDownCount() {
 
 }
 
-// run it every 5 minutes
-setInterval(upDownCount,300000);
+upDownCount();
+
+// run it every minute
+setInterval(upDownCount,60000);
