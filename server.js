@@ -295,6 +295,7 @@ REQUEST URL PARAMS
 REQUEST POST PARAMS
 adminUsername* - STR name of the admin
 adminPassword* - STR password of the admin
+adminEmail* - STR email of the admin
 adminReadOnly* - BOOLEAN admin readOnly status
 
 RESPONSE CODES
@@ -306,7 +307,7 @@ RESPONSE CODES
 router.post('/admin').bind(function (req, res, params) {
 	auth(params.username, params.password, true, req, res, function (err, docs) {
 
-            checkParams(params, ['adminUsername','adminPassword','adminReadOnly'], function (err) {
+            checkParams(params, ['adminUsername','adminPassword','adminEmail','adminReadOnly'], function (err) {
 
                 if (err) {
                     res.send(500, {}, {'error':err});
@@ -316,7 +317,7 @@ router.post('/admin').bind(function (req, res, params) {
                         if (params.adminReadOnly != 0) {
                             params.adminReadOnly = 1;
                         }
-                        collection.insert({'username':params.adminUsername, 'password':bcrypt.hashSync(params.adminPassword, 8), 'readOnly':params.adminReadOnly}, function(err, docs) {
+                        collection.insert({'username':params.adminUsername, 'password':bcrypt.hashSync(params.adminPassword, 8), 'email':params.adminEmail, 'readOnly':params.adminReadOnly}, function(err, docs) {
                             if (err) {
                                 res.send(500, {}, {'error':err});
                             } else {
@@ -337,10 +338,9 @@ PUT /admin - update an admin
 AUTH REQUIRED
 
 REQUEST URL PARAMS
-
-REQUEST POST PARAMS
 adminUsername* - STR name of the admin
 adminPassword - STR password of the admin
+adminEmail - STR email of the admin
 adminReadOnly - BOOLEAN admin readOnly status
 
 RESPONSE CODES
@@ -364,15 +364,20 @@ router.put('/admin').bind(function (req, res, params) {
                     res.send(500, {}, {'error':err});
                 } else if (params.username == params.adminUsername && params.adminReadOnly != undefined) {
                     res.send(500, {}, {'error':'you cannot change your readOnly state, you will lock yourself out'});
+                } else if (params.username != params.adminUsername && params.adminPassword != undefined) {
+                    res.send(500, {}, {'error':'you can only change your password'});
                 } else {
 
                     db.collection('admins', function (err, collection) {
                         var i = {};
-                        if (params.adminPassword != undefined) {
+                        if (params.adminPassword != undefined && params.adminPassword != '') {
                             i.password = bcrypt.hashSync(params.adminPassword, 8);
                         }
-                        if (params.adminReadOnly != undefined) {
+                        if (params.adminReadOnly != undefined && params.adminReadOnly != '') {
                             i.readOnly = params.adminReadOnly;
+                        }
+                        if (params.adminEmail != undefined && params.adminEmail != '') {
+                            i.email = params.adminEmail;
                         }
                         collection.update({'username':params.adminUsername}, {'$set':i}, function(err, docs) {
                             if (err) {
@@ -512,7 +517,7 @@ REQUEST URL PARAMS
 
 REQUEST POST PARAMS
 name* - STR name of the zone
-notes* - STR notes for the group
+notes* - STR notes for the zone
 
 RESPONSE CODES
 200 - Valid Zone
@@ -546,6 +551,67 @@ router.post('/zone').bind(function (req, res, params) {
 });
 
 /*
+PUT /zone - update a zone
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+zoneId* - STR id of the zone
+name - STR name of the zone
+notes - STR notes for the zone
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.put('/zone').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
+
+            async.series([
+                function(callback) {
+                    checkParams(params, ['zoneId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+                function(callback) {
+                    if (isValidMongoId(params.zoneId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid zoneId', '');
+                    }
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+
+                    db.collection('zones', function (err, collection) {
+                        var i = {};
+                        if (params.name != undefined && params.name != '') {
+                            i.name = params.name;
+                        }
+                        if (params.notes != undefined && params.notes != '') {
+                            i.notes = params.notes;
+                        }
+                        collection.update({'_id':new mongodb.ObjectID(params.zoneId)}, {'$set':i}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'zone':docs[0]});
+                            }
+                        });
+                    });
+
+                }
+            });
+
+	});
+});
+
+/*
 DELETE /zone - delete a zone
 
 AUTH REQUIRED
@@ -563,6 +629,7 @@ router.del('/zone').bind(function (req, res, params) {
 	auth(params.username, params.password, true, req, res, function (err, docs) {
 
             async.series([
+
                 function(callback) {
                     if (isValidMongoId(params.zoneId)) {
                         callback(null, '');
@@ -570,6 +637,7 @@ router.del('/zone').bind(function (req, res, params) {
                         callback('invalid zoneId', '');
                     }
                 },
+
                 function(callback) {
                     checkParams(params, ['zoneId'], function (err) {
                         callback(err, '');
@@ -753,6 +821,67 @@ router.post('/group').bind(function (req, res, params) {
                     });
                 }
             });
+	});
+});
+
+/*
+PUT /group - update a group
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+groupId* - STR id of the group
+name - STR name of the group
+notes - STR notes for the group
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.put('/group').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
+
+            async.series([
+                function(callback) {
+                    checkParams(params, ['groupId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+                function(callback) {
+                    if (isValidMongoId(params.groupId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid groupId', '');
+                    }
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+
+                    db.collection('groups', function (err, collection) {
+                        var i = {};
+                        if (params.name != undefined && params.name != '') {
+                            i.name = params.name;
+                        }
+                        if (params.notes != undefined && params.notes != '') {
+                            i.notes = params.notes;
+                        }
+                        collection.update({'_id':new mongodb.ObjectID(params.groupId)}, {'$set':i}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'group':docs[0]});
+                            }
+                        });
+                    });
+
+                }
+            });
+
 	});
 });
 
@@ -1015,6 +1144,120 @@ router.post('/host').bind(function (req, res, params) {
                             }
                         });
                     });
+                }
+            });
+
+	});
+});
+
+/*
+PUT /host - update a host
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+hostId* - STR id of the host
+login - STR host login for authentication
+key - STR host password for authentication
+name - STR host display name
+latitude - FLOAT
+longitude - FLOAT
+notes - STR notes about the host
+channel - INT wifi channel for host
+vlan - INT vlan ID for host
+ssid - STR ssid for host
+encryption - STR encryption type (psk, psk2, none)
+encryptionKey - STR encryption key
+reboot - BOOLEAN true to reboot host on next update
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document admin
+400 - Unauthorized
+	returns nothing
+*/
+router.put('/host').bind(function (req, res, params) {
+	auth(params.username, params.password, true, req, res, function (err, docs) {
+
+            async.series([
+                function(callback) {
+                    checkParams(params, ['hostId'], function (err) {
+                        callback(err, '');
+                    });
+                },
+                function(callback) {
+                    if (isValidMongoId(params.hostId)) {
+                        callback(null, '');
+                    } else {
+                        callback('invalid hostId', '');
+                    }
+                }
+            ], function(err, results) {
+
+                if (err) {
+                    res.send(500, {}, {'error':err});
+                } else {
+
+                    db.collection('hosts', function (err, collection) {
+                        var i = {};
+
+                        if (params.login != undefined && params.login != '') {
+                            i.login = params.login;
+                        }
+
+                        if (params.key != undefined && params.key != '') {
+                            i.key = params.key;
+                        }
+
+                        if (params.name != undefined && params.name != '') {
+                            i.name = params.name;
+                        }
+
+                        if (params.latitude != undefined && params.latitude != '') {
+                            i.latitude = params.latitude;
+                        }
+
+                        if (params.longitude != undefined && params.longitude != '') {
+                            i.longitude = params.longitude;
+                        }
+
+                        if (params.notes != undefined && params.notes != '') {
+                            i.notes = params.notes;
+                        }
+
+                        if (params.channel != undefined && params.channel != '') {
+                            i.channel = params.channel;
+                        }
+
+                        if (params.vlan != undefined && params.vlan != '') {
+                            i.vlan = params.vlan;
+                        }
+
+                        if (params.ssid != undefined && params.ssid != '') {
+                            i.ssid = params.ssid;
+                        }
+
+                        if (params.encryption != undefined && params.encryption != '') {
+                            i.encryption = params.encryption;
+                        }
+
+                        if (params.encryptionKey != undefined && params.encryptionKey != '') {
+                            i.encryptionKey = params.encryptionKey;
+                        }
+
+                        if (params.reboot != undefined && params.reboot != '') {
+                            i.reboot = params.reboot;
+                        }
+
+                        collection.update({'_id':new mongodb.ObjectID(params.hostId)}, {'$set':i}, function(err, docs) {
+                            if (err) {
+                                res.send(500, {}, {'error':err});
+                            } else {
+                                res.send({'success':1, 'host':docs[0]});
+                            }
+                        });
+                    });
+
                 }
             });
 

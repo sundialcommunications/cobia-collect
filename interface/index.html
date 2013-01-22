@@ -70,8 +70,10 @@
         overflow: auto;
     }
     .editable {
-        padding: 4px;
-        border: 1px dotted #ccc;
+        border-bottom: 2px dotted #fc0;
+        min-width: 40px;
+        display: block;
+        float: right;
     }
     </style>
     <!--<link href="css/bootstrap-responsive.css" rel="stylesheet">-->
@@ -118,7 +120,7 @@
           <a class="brand" href="#" onClick="window.location='/';">cobia-collect</a>
           <div class="nav-collapse collapse">
             <p class="navbar-text pull-right">
-              Logged in as <a href="#" id="logout" class="navbar-link"></a>
+              Logged in as <a href="#" id="logout" onClick="logOut();" class="navbar-link"></a>
             </p>
             <ul class="nav">
               <li><a href="#" id="newZone">New Zone</a></li>
@@ -195,23 +197,58 @@
         </div><!--newHostView-->
 
         <div class="defHide" id="zoneView">
-          <div id="zoneViewTitle"></div>
+        <h2 id="zoneViewTitle" class="editable" style="float: none;" contenteditable="true"></h2>
+          <div id="zoneViewUD"></div>
+          <p><pre id="zoneViewNotes" contenteditable="true" class="notesHolder"></pre></p>
           <div id="zoneViewMap"></div>
         <div id="zoneViewGroups"></div>
         </div><!--zoneView-->
 
         <div class="defHide" id="groupView">
-          <div id="groupViewTitle"></div>
+        <h2 id="groupViewTitle" class="editable" style="float: none;" contenteditable="true"></h2>
           <div id="groupViewUD"></div>
+          <p><pre id="groupViewNotes" contenteditable="true" class="notesHolder"></pre></p>
           <div id="groupViewMap"></div>
-          <div id="groupViewNotes"></div>
         <div id="groupViewHosts"></div>
         </div><!--groupView-->
 
         <div class="defHide" id="hostView">
-        <div id="hostViewTitle"></div>
+        <h2 id="hostViewTitle" class="editable" style="float: none;" contenteditable="true"></h2>
+        <div id="hostViewUD"></div>
+        <p><pre id="hostViewNotes" contenteditable="true" class="notesHolder"></pre></p>';
         <div id="hostViewMap"></div>
-        <div id="hostViewHost"></div>
+        <br /><br />
+
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">Login:</span> <span class="editable" contenteditable="true" id="hostViewLogin"></span></div>
+<div class="span4"><span class="label label-info">Key:</span> <span class="editable" contenteditable="true" id="hostViewKey"></span></div>
+<div class="span4"><span class="label label-info">Last Update:</span> <span style="float: right;" class="epochago" id="hostViewLastUpdate"></span></div>
+</div>
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">Last Boot Request:</span> <span style="float: right;" class="epochago" id="hostViewLastBootRequest"></span></div>
+<div class="span4"><span class="label label-info">Created At:</span> <span style="float: right;" class="epochago" id="hostViewCreatedAt"></span></div>
+<div class="span4"><span class="label label-info">Uptime:</span> <span style="float: right;" id="hostViewUptime"></span></div>
+</div>
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">Client Info:</span> <span style="float: right;" id="hostViewClientInfo"></span></div>
+<div class="span4"><span class="label label-info">Version:</span> <span style="float: right;" id="hostViewVersion"></span></div>
+<div class="span4"><span class="label label-info">Outside IP:</span> <span style="float: right;" id="hostViewOutsideIp"></span></div>
+</div>
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">WAN IP:</span> <span style="float: right;" id="hostViewWanIp"></span></div>
+<div class="span4"><span class="label label-info">Latitude:</span> <span class="editable" contenteditable="true" id="hostViewLatitude"></span></div>
+<div class="span4"><span class="label label-info">Longitude:</span> <span class="editable" contenteditable="true" id="hostViewLongitude"></span></div>
+</div>
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">Channel:</span> <span class="editable" contenteditable="true" id="hostViewChannel"></span></div>
+<div class="span4"><span class="label label-info">VLAN:</span> <span class="editable" contenteditable="true" id="hostViewVlan"></span></div>
+<div class="span4"><span class="label label-info">SSID:</span> <span class="editable" contenteditable="true" id="hostViewSsid"></span></div>
+</div>
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">Encryption:</span> <span class="editable" contenteditable="true" id="hostViewEncryption"></span></div>
+<div class="span4"><span class="label label-info">Encryption Key:</span> <span class="editable" contenteditable="true" id="hostViewEncryptionKey"></span></div>
+</div>
+
         </div><!--hostView-->
 
         <div class="defHide" id="accountsView">
@@ -222,7 +259,13 @@
         <h2>New Admin</h2>
         <input id="accountsViewUsername" type="text" class="" placeholder="Username" /><br />
         <input id="accountsViewPassword" type="text" class="" placeholder="Password" /><br />
-        <button id="accountsViewButton" class="btn btn-large btn-primary" type="submit">Create Admin</button>
+        <input id="accountsViewEmail" type="text" class="" placeholder="Email" /><br />
+        <button id="accountsViewCreateAdmin" class="btn btn-large btn-primary" type="submit">Create Admin</button>
+
+        <h2>Update your Account</h2>
+        <input id="accountsViewChangePassword" type="text" class="" placeholder="New Password" /><br />
+        <input id="accountsViewChangeEmail" type="text" class="" placeholder="New Email" /><br />
+        <button id="accountsViewChangeSubmit" class="btn btn-large btn-primary" type="submit">Update</button>
 
         </div><!--accountsView-->
 
@@ -392,8 +435,7 @@
         });
 
         // logout
-        $('#logout').on("click", function(event) {
-            event.preventDefault();
+        function logOut() {
 
             // destroy cookies
             $.removeCookie('username');
@@ -407,7 +449,7 @@
             // remove logout username
             $('#logout').html('');            
 
-        });
+        }
 
         $('#newZone').on("click", function(event) {
             event.preventDefault();
@@ -564,7 +606,10 @@
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#zoneViewTitle').html('<h2>Zone: '+data.zone.name+'</h2><p><span class="label label-success">'+data.zone.numUp+' up</span> <span class="label label-important">'+data.zone.numDown+' down</span> <a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a></p><p><pre class="notesHolder">'+data.zone.notes+'</pre></p>');
+                    $('#zoneViewTitle').html(data.zone.name);
+                    $('#zoneViewUD').html('<p><span class="label label-success">'+data.zone.numUp+' up</span> <span class="label label-important">'+data.zone.numDown+' down</span> <a href="#" onClick="deleteZone(\''+zoneId+'\');" class="label label-warning">Delete Zone</a> <a href="#" onClick="updateZone(\''+zoneId+'\');" class="label label-info">Update Zone</a></p>');
+                    loopData();
+                    $('#zoneViewNotes').html(data.zone.notes);
                 }
 
             });
@@ -662,8 +707,8 @@
                 if (err) {
                     alert(err.error);
                 } else {
-                    $('#groupViewTitle').html('<h2>Group: '+data.group.name+'</h2>');
-                    $('#groupViewNotes').html('<p><pre class="notesHolder">'+data.group.notes+'</pre></p>');
+                    $('#groupViewTitle').html(data.group.name);
+                    $('#groupViewNotes').html(data.group.notes);
                 }
 
             });
@@ -711,7 +756,7 @@
 
                     }
 
-                    $('#groupViewUD').html('<p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a></p>');
+                    $('#groupViewUD').html('<p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a> <a href="#" onClick="updateGroup(\''+groupId+'\');" class="label label-info">Update Group</a></p>');
 
                     function dMap() {
                         var map = new google.maps.Map(document.getElementById("groupViewMap"), defMapOptions);
@@ -766,47 +811,40 @@
                 if (err) {
                     alert(err.error);
                 } else {
-                    var h = '<h3>'+data.host.name+'</h3>';
-                    h += '<p><a href="#" onClick="deleteHost(\''+hostId+'\');" class="label label-warning">Delete Host</a>';
+                    $('#hostViewTitle').html(data.host.name);
+                    var h = '';
+                    h += '<p><a href="#" onClick="deleteHost(\''+hostId+'\');" class="label label-warning">Delete Host</a> ';
+                    if (data.host.reboot == 1) {
+                        h += '<span class="label label-warning">Host Rebooting</span>';
+                    } else {
+                        h += '<a href="#" onClick="rebootHost(\''+hostId+'\');" class="label label-warning">Reboot Host</a>';
+                    }
                     h += ' ';
                     if (data.host.lastUpdate == undefined || data.host.lastUpdate < Math.round((new Date()).getTime() / 1000)-600) {
                         h += '<span class="label label-important">Down</span>';
                     } else {
                         h += '<span class="label label-success">Stable</span>';
                     }
-                    h += '</p>';
-                    $('#hostViewTitle').html(h);
-                    h = '';
-                    h += '<p><pre class="notesHolder">'+data.host.notes+'</pre></p>';
-                    h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Login:</span> '+data.host.login+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Key:</span> '+data.host.key+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Last Update:</span> <span class="epochago">'+data.host.lastUpdate+'</span></div>';
-                    h += '</div>';
-                    h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Last Boot Request:</span> <span class="epochago">'+data.host.lastBootRequest+'</span></div>';
-                    h += '<div class="span4"><span class="label label-info">Created At:</span> <span class="epochago">'+data.host.createdAt+'</span></div>';
-                    h += '<div class="span4"><span class="label label-info">Uptime:</span> '+Math.round((data.host.uptime/60/60/24)*100)/100+' days</div>';
-                    h += '</div>';
-                    h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Client Info:</span> '+data.host.clientInfo+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Version:</span> '+data.host.version+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Outside IP:</span> '+data.host.outsideIp+'</div>';
-                    h += '</div>';
-                    h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">WAN IP:</span> '+data.host.wanIp+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Latitude:</span> '+data.host.latitude+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Longitude:</span> '+data.host.longitude+'</div>';
-                    h += '</div>';
-                    h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Channel:</span> <span class="editable" contenteditable="true">'+data.host.channel+'</span></div>';
-                    h += '<div class="span4"><span class="label label-info">VLAN:</span> '+data.host.vlan+'</div>';
-                    h += '<div class="span4"><span class="label label-info">SSID:</span> '+data.host.ssid+'</div>';
-                    h += '</div>';
-                    h += '<div class="row-fluid">';
-                    h += '<div class="span4"><span class="label label-info">Encryption:</span> '+data.host.encryption+'</div>';
-                    h += '<div class="span4"><span class="label label-info">Encryption Key:</span> '+data.host.encryptionKey+'</div>';
-                    h += '</div>';
+                    h += ' <a href="#" onClick="updateHost(\''+hostId+'\');" class="label label-info">Update Host</a></p>';
+                    $('#hostViewUD').html(h);
+                    $('#hostViewNotes').html(data.host.notes);
+                    $('#hostViewLogin').html(data.host.login);
+                    $('#hostViewKey').html(data.host.key);
+                    $('#hostViewLastUpdate').attr('title',data.host.lastUpdate);
+                    $('#hostViewLastBootRequest').attr('title',data.host.lastBootRequest);
+                    $('#hostViewCreatedAt').attr('title',data.host.createdAt);
+                    $('#hostViewUptime').html(Math.round((data.host.uptime/60/60/24)*100)/100);
+                    $('#hostViewClientInfo').html(data.host.clientInfo);
+                    $('#hostViewVersion').html(data.host.version);
+                    $('#hostViewOutsideIp').html(data.host.outsideIp);
+                    $('#hostViewWanIp').html(data.host.wanIp);
+                    $('#hostViewLatitude').html(data.host.latitude);
+                    $('#hostViewLongitude').html(data.host.longitude);
+                    $('#hostViewChannel').html(data.host.channel);
+                    $('#hostViewVlan').html(data.host.vlan);
+                    $('#hostViewSsid').html(data.host.ssid);
+                    $('#hostViewEncryption').html(data.host.encryption);
+                    $('#hostViewEncryptionKey').html(data.host.encryptionKey);
 
                     function dMap() {
                         var map = new google.maps.Map(document.getElementById("hostViewMap"), defMapOptions);
@@ -841,13 +879,26 @@
                     }
                     setTimeout(dMap, 1000);
 
-                    $('#hostViewHost').html(h);
                     showView('hostView');
 
                 }
 
             });
 
+        }
+
+        function updateZone(zoneId) {
+            apiCall('/zone','PUT',{'zoneId':zoneId,'name':$('#zoneViewTitle').html(),'notes':$('#zoneViewNotes').html()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Zone Updated');
+                    zoneView(zoneId);
+                    loopData();
+                }
+
+            });
         }
 
         function deleteZone(zoneId) {
@@ -857,8 +908,21 @@
                     alert(err.error);
                 } else {
                     alert('Zone Deleted');
-                    showView(null);
+                    zoneView(zoneId);
                     loopData();
+                }
+
+            });
+        }
+
+        function updateGroup(groupId) {
+            apiCall('/group','PUT',{'groupId':groupId,'name':$('#groupViewTitle').html(),'notes':$('#groupViewNotes').html()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Group Updated');
+                    groupView(groupId);
                 }
 
             });
@@ -873,6 +937,32 @@
                     alert('Group Deleted');
                     showView(null);
                     loopData();
+                }
+
+            });
+        }
+
+        function rebootHost(hostId) {
+            apiCall('/host','PUT',{'hostId':hostId,'reboot':1}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Host Rebooted');
+                    hostView(hostId);
+                }
+
+            });
+        }
+
+        function updateHost(hostId) {
+            apiCall('/host','PUT',{'hostId':hostId,'login':$('#hostViewLogin').html(),'key':$('#hostViewKey').html(),'longitude':$('#hostViewLongitude').html(),'latitude':$('#hostViewLatitude').html(),'channel':$('#hostViewChannel').html(),'vlan':$('#hostViewVlan').html(),'ssid':$('#hostViewSsid').html(),'encryption':$('#hostViewEncryption').html(),'encryptionKey':$('#hostViewEncryptionKey').html()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Host Updated');
+                    hostView(hostId);
                 }
 
             });
@@ -906,8 +996,8 @@
 
                     for (var i=0; i<data.admins.length; i++) {
 
-                        h += '<div style="width: 400px;" class="alert alert-info">';
-                        h += '<h4 style="float: left;">' + data.admins[i].username;
+                        h += '<div class="alert alert-info">';
+                        h += '<h4 style="float: left;">' + data.admins[i].username + ' - '+data.admins[i].email;
                         h += ' (<a href="#" onClick="deleteAdmin(\''+data.admins[i].username+'\');">X</a>)</h4>';
                         if (data.admins[i].readOnly == 1) {
                             h += '<a href="#" onClick="setAdminViewOnly(\''+data.admins[i].username+'\',0);" style="float: right;" class="label label-important">READ ONLY</a>';
@@ -952,10 +1042,10 @@
             });
         }
 
-        $('#accountsViewButton').on("click", function(event) {
+        $('#accountsViewCreateAdmin').on("click", function(event) {
             event.preventDefault();
 
-            apiCall('/admin','POST',{'adminUsername':$('#accountsViewUsername').val(),'adminPassword':$('#accountsViewPassword').val(),'adminReadOnly':1}, function (err, data) {
+            apiCall('/admin','POST',{'adminUsername':$('#accountsViewUsername').val(),'adminPassword':$('#accountsViewPassword').val(),'adminEmail':$('#accountsViewEmail').val(),'adminReadOnly':1}, function (err, data) {
 
                 if (err) {
                     alert(err.error);
@@ -963,7 +1053,30 @@
                     alert('Admin: '+$('#accountsViewUsername').val()+' created');
                     $('#accountsViewUsername').val('');
                     $('#accountsViewPassword').val('');
+                    $('#accountsViewEmail').val('');
                     accountsView();
+                }
+
+            });
+
+        });
+
+        $('#accountsViewChangeSubmit').on("click", function(event) {
+            event.preventDefault();
+
+            apiCall('/admin','PUT',{'adminUsername':$.cookie('username'),'adminPassword':$('#accountsViewChangePassword').val(),'adminEmail':$('#accountsViewChangeEmail').val()}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    alert('Account Updated');
+                    if ($('#accountsViewChangePassword').val() != '') {
+                        logOut();
+                    } else {
+                        accountView();
+                    }
+                    $('#accountsViewChangePassword').val('');
+                    $('#accountsViewChangeEmail').val('');
                 }
 
             });
@@ -1021,7 +1134,7 @@
             if (viewName != null) {
                 $('#'+viewName).show('fast');
             }
-            $('.epochago').epochago();
+            setTimeout($('.epochago').epochago(),1000);
         }
 
     </script>
