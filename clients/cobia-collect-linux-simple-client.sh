@@ -1,3 +1,5 @@
+#!/bin/sh
+
 ###### cobia-collect-linux-simple-client.php ######
 
 # client script for cobia-collect
