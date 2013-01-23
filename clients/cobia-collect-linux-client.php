@@ -10,7 +10,8 @@
 
 # * linux 2.6+
 # * fping
-# * php5
+# * php5 w/ json
+# * cron
 
 ###### CONFIGURATION ######
 

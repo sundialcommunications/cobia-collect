@@ -72,7 +72,7 @@ router.post('/boot').bind(function (req, res, data) {
 
 });
 
-router.post('/update').bind(function (req, res, data) {
+router.route(['POST','GET'],'/update').bind(function (req, res, data) {
 
     authorize(data, function (auth, host) {
 
