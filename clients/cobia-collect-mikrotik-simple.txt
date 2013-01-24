@@ -8,4 +8,4 @@
 :local myurl "http://collect.cobianet.com:8550/update?login=$login&key=$key&clientInfo=collect-mikrotik-client-simple&version=RB$mymodel-$myversion"
 
 :log info ("collect script fetching: " . $myurl);
-/tool fetch url=$myurl;
+/tool fetch keep-result=no url=$myurl;
