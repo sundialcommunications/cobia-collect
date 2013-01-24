@@ -1,0 +1,11 @@
+:local login "loginString";
+:local key "keyString";
+
+# version data
+:local mymodel [/system routerboard get model];
+:local myversion [/system package get 0 version];
+
+:local myurl "http://collect.cobianet.com:8550/update?login=$login&key=$key&clientInfo=collect-mikrotik-client-simple&version=RB$mymodel-$myversion"
+
+:log info ("collect script fetching: " . $myurl);
+/tool fetch url=$myurl;
