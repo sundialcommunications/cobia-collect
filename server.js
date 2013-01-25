@@ -1491,3 +1491,37 @@ upDownCount();
 
 // run it every minute
 setInterval(upDownCount,60000);
+
+// startup checks
+
+// indexes
+// hosts
+db.ensureIndex('hosts', 'login', {'unique':true}, function(err, name) { if (err) { console.log(err) } });
+db.ensureIndex('hosts', 'key', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+db.ensureIndex('hosts', 'groupId', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+db.ensureIndex('hosts', 'zoneId', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+
+// groups
+db.ensureIndex('groups', 'name', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+db.ensureIndex('groups', 'zoneId', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+
+// zones
+db.ensureIndex('zones', 'name', {'unique':true}, function(err, name) { if (err) { console.log(err) } });
+
+// admins
+db.ensureIndex('admins', 'username', {'unique':true}, function(err, name) { if (err) { console.log(err) } });
+
+// adminWriteLog
+db.ensureIndex('adminWriteLog', 'username', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+
+// ensure there is an admin account
+db.collection('admins', function (err, collection) {
+    collection.find({}).toArray(function(err, docs) {
+        if (docs.length == 0) {
+            // create admin account - admin/password
+            collection.insert({'username':'admin', 'password':bcrypt.hashSync('password', 8), 'readOnly':0}, function(err, docs) {
+            });
+        }
+    });
+});
+
