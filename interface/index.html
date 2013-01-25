@@ -181,6 +181,8 @@
         <textarea id="newHostViewNotes" placeholder="Notes" /></textarea><br />
         <input id="newHostViewLatitude" type="text" class="" placeholder="Latitude" /><br />
         <input id="newHostViewLongitude" type="text" class="" placeholder="Longitude" /><br />
+        <input id="newHostViewWirelessMode" type="text" class="" placeholder="Wireless Mode" /><br />
+        <input id="newHostViewWds" type="text" class="" placeholder="WDS" /><br />
         <input id="newHostViewChannel" type="text" class="" placeholder="Channel" /><br />
         <input id="newHostViewVlan" type="text" class="" placeholder="VLAN" /><br />
         <input id="newHostViewSsid" type="text" class="" placeholder="SSID" /><br />
@@ -248,6 +250,9 @@
 <div class="span4"><span class="label label-info">SSID:</span> <span class="editable" contenteditable="true" id="hostViewSsid"></span></div>
 <div class="span4"><span class="label label-info">Encryption:</span> <span class="editable" contenteditable="true" id="hostViewEncryption"></span></div>
 <div class="span4"><span class="label label-info">Encryption Key:</span> <span class="editable" contenteditable="true" id="hostViewEncryptionKey"></span></div>
+</div>
+<div class="row-fluid">
+<div class="span4"><span class="label label-info">WDS:</span> <span class="editable" contenteditable="true" id="hostViewWds"></span></div>
 </div>
 
         </div><!--hostView-->
@@ -580,7 +585,7 @@
         $('#newHostViewButton').on("click", function(event) {
             event.preventDefault();
 
-            apiCall('/host','POST',{'login':$('#newHostViewLogin').val(),'key':$('#newHostViewKey').val(),'name':$('#newHostViewName').val(),'notes':$('#newHostViewNotes').val(),'latitude':$('#newHostViewLatitude').val(),'longitude':$('#newHostViewLongitude').val(),'channel':$('#newHostViewChannel').val(),'vlan':$('#newHostViewVlan').val(),'ssid':$('#newHostViewSsid').val(),'encryption':$('#newHostViewEncryption').val(),'encryptionKey':$('#newHostViewEncryptionKey').val(),'groupId':$('#newHostViewGroupId').val()}, function (err, data) {
+            apiCall('/host','POST',{'login':$('#newHostViewLogin').val(),'key':$('#newHostViewKey').val(),'name':$('#newHostViewName').val(),'notes':$('#newHostViewNotes').val(),'latitude':$('#newHostViewLatitude').val(),'longitude':$('#newHostViewLongitude').val(),'wirelessMode':$('#newHostViewWirelessMode').val(),'wds':$('#newHostViewWds').val(),'channel':$('#newHostViewChannel').val(),'vlan':$('#newHostViewVlan').val(),'ssid':$('#newHostViewSsid').val(),'encryption':$('#newHostViewEncryption').val(),'encryptionKey':$('#newHostViewEncryptionKey').val(),'groupId':$('#newHostViewGroupId').val()}, function (err, data) {
 
                 if (err) {
                     alert(err.error);
@@ -867,6 +872,7 @@
                     $('#hostViewLatitude').html(data.host.latitude);
                     $('#hostViewLongitude').html(data.host.longitude);
                     $('#hostViewWirelessMode').html(data.host.wirelessMode);
+                    $('#hostViewWds').html(data.host.wds);
                     $('#hostViewChannel').html(data.host.channel);
                     $('#hostViewVlan').html(data.host.vlan);
                     $('#hostViewSsid').html(data.host.ssid);
@@ -983,7 +989,7 @@
         }
 
         function updateHost(hostId) {
-            apiCall('/host','PUT',{'hostId':hostId,'login':$('#hostViewLogin').html(),'name':$('#hostViewTitle').html(),'notes':$('#hostViewNotes').html(),'key':$('#hostViewKey').html(),'longitude':$('#hostViewLongitude').html(),'latitude':$('#hostViewLatitude').html(),'wirelessMode':$('#hostViewWirelessMode').html(),'channel':$('#hostViewChannel').html(),'vlan':$('#hostViewVlan').html(),'ssid':$('#hostViewSsid').html(),'encryption':$('#hostViewEncryption').html(),'encryptionKey':$('#hostViewEncryptionKey').html()}, function (err, data) {
+            apiCall('/host','PUT',{'hostId':hostId,'login':$('#hostViewLogin').html(),'name':$('#hostViewTitle').html(),'notes':$('#hostViewNotes').html(),'key':$('#hostViewKey').html(),'longitude':$('#hostViewLongitude').html(),'latitude':$('#hostViewLatitude').html(),'wirelessMode':$('#hostViewWirelessMode').html(),'wds':$('#hostViewWds').html(),'channel':$('#hostViewChannel').html(),'vlan':$('#hostViewVlan').html(),'ssid':$('#hostViewSsid').html(),'encryption':$('#hostViewEncryption').html(),'encryptionKey':$('#hostViewEncryptionKey').html()}, function (err, data) {
 
                 if (err) {
                     alert(err.error);

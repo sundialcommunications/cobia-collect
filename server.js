@@ -1086,6 +1086,7 @@ latitude - FLOAT
 longitude - FLOAT
 notes* - STR notes about the host
 wirelessMode - STR wireless mode, ap/sta
+wds - INT 1/0 wds
 channel - INT wifi channel for host
 vlan - INT vlan ID for host
 ssid - STR ssid for host
@@ -1137,7 +1138,7 @@ router.post('/host').bind(function (req, res, params) {
                 } else {
                     zoneId = String(results[2].zoneId);
                     db.collection('hosts', function (err, collection) {
-                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'wirelessMode':params.wirelessMode, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(zoneId), 'reboot':1, 'createdAt':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
+                        collection.insert({'login':params.login, 'key':params.key, 'name':params.name, 'latitude':params.latitude, 'longitude':params.longitude, 'notes':params.notes, 'wirelessMode':params.wirelessMode, 'wds':params.wds, 'channel':params.channel, 'vlan':params.vlan, 'ssid':params.ssid, 'encryption':params.encryption, 'encryptionKey':params.encryptionKey, 'groupId':new mongodb.ObjectID(params.groupId), 'zoneId':new mongodb.ObjectID(zoneId), 'reboot':1, 'createdAt':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
                             if (err) {
                                 res.send(500, {}, {'error':err});
                             } else {
@@ -1165,6 +1166,7 @@ latitude - FLOAT
 longitude - FLOAT
 notes - STR notes about the host
 wirelessMode - STR wireless mode, ap/sta
+wds - INT 1/0 wds
 channel - INT wifi channel for host
 vlan - INT vlan ID for host
 ssid - STR ssid for host
@@ -1230,6 +1232,10 @@ router.put('/host').bind(function (req, res, params) {
 
                         if (params.wirelessMode != undefined && params.wirelessMode != '') {
                             i.wirelessMode = params.wirelessMode;
+                        }
+
+                        if (params.wds != undefined && params.wds != '') {
+                            i.wds = params.wds;
                         }
 
                         if (params.channel != undefined && params.channel != '') {
