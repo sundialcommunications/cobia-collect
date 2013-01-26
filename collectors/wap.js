@@ -1,14 +1,14 @@
+var jsonrrd = require('../lib/json-rrd.js')
+
 exports.incomingData = function (db, data, host) {
     if (db) {
-        var keys = Object.keys(data);
-        for (i=0; i<keys.length; i++) {
-            // loop through each wap
-            data[keys[i]].hostId = host._id;
-            data[keys[i]].ts = Math.round((new Date()).getTime() / 1000);
-            db.collection('wapCollector', function (err, collection) {
-                collection.insert(data[keys[i]], {'safe':false}, function (err, objects) {
-                });
-            });
-        }
     }
 };
+
+exports.ensureIndex = function(db) {
+
+    if (db) {
+        //db.ensureIndex('pingCollector', {'hostId':1,'host':1}, {'unique':true}, function(err, name) { if (err) { console.log(err) } });
+    }
+
+}

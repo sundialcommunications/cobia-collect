@@ -1,10 +1,14 @@
+var jsonrrd = require('../lib/json-rrd.js')
+
 exports.incomingData = function (db, data, host) {
     if (db) {
-        data.hostId = host._id;
-        data.ts = Math.round((new Date()).getTime() / 1000);
-        db.collection('systemCollector', function (err, collection) {
-            collection.insert(data, {'safe':false}, function (err, objects) {
-            });
-        });
     }
 };
+
+exports.ensureIndex = function(db) {
+
+    if (db) {
+        //db.ensureIndex('pingCollector', {'hostId':1,'host':1}, {'unique':true}, function(err, name) { if (err) { console.log(err) } });
+    }
+
+}

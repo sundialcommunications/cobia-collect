@@ -23,6 +23,8 @@ for (var i=0; i<files.length; i++) {
 		    // add as valid collector
 		    validCollectors[i] = s[0];
             colReqs[s[0]] = require('./collectors/'+files[i]);
+            // running ensureIndex for the collector
+            colReqs[s[0]].ensureIndex(db);
 		    console.log('Adding: collectors/'+files[i]);
         }
 	}
