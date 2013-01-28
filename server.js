@@ -68,55 +68,6 @@ for (var i=0; i<files.length; i++) {
 
 var router = new(journey.Router);
 
-// CURRENTLY HOLDING IN SERVER FOR COLLECTOR CALL
-router.post('/update').bind(function (req, res, data) {
-
-    authorize(data, function (auth, host) {
-
-        if (auth) {
-
-            console.log('Successful request to /update from '+host.name);
-
-            // update hosts
-            db.collection('hosts', function (err, collection) {
-                collection.update({_id:host._id},{'$set':{'uptime':data.uptime,'wanIp':data.wanIp,'reboot':0,'clientInfo':data.clientInfo,'lastUpdate':Math.round((new Date()).getTime() / 1000),'outsideIp':req.connection.remoteAddress,'version':data.version}}, function(err) {
-                });
-            });
-
-            if (data.collectors != undefined) {
-                // run collectors
-
-                var keys = Object.keys(data.collectors);
-                for (f=0; f<keys.length; f++) {
-                    if (validCollectors.hasValue(keys[f])) {
-                        // run this collector
-                        console.log('running collector '+keys[f]+' for '+host.login);
-                        try {
-                            colReqs[keys[f]].incomingData(db, data.collectors[keys[f]], host);
-                        } catch (err) {
-                            console.log('Error starting collector: '+err);
-                        }
-                    } else {
-                        // collector not supported on system
-                        console.log('unsupported collector '+keys[f]+' for '+host.login);
-                    }
-                }
-            }
-
-            if (host.reboot == 1) {
-                console.log('Rebooting host '+host.name);
-                res.send({"reboot":1});
-            } else {
-                res.send(200);
-            }
-        } else {
-            res.send(403);
-        }
-
-    });
-
-});
-
 // UPDATE TYPES
 /*
 GET returns info on an object
@@ -1342,23 +1293,137 @@ router.get('/globalCollectors').bind(function (req, res, params) {
 
 
 /*
-GET /collectors - get collector data for a host
+GET /collectors - get collectors with overview for a host
 
 AUTH REQUIRED
 
 REQUEST URL PARAMS
-hostId, detailed=false
+hostId* - STR id of the host
 
 
 RESPONSE CODES
 200 - Valid Zone
-	returns json document zone
+	returns json document collectors
 400 - Unauthorized
 	returns nothing
 */
-router.get('/collectors ').bind(function (req, res, params) {
+router.get('/collectors').bind(function (req, res, params) {
 	auth(params.username, params.password, false, req, res, function (err, docs) {
-        res.send({'success':1});
+
+        async.series([
+
+            function(callback) {
+                checkParams(params, ['hostId'], function (err) {
+                    callback(err, '');
+                });
+            },
+
+            function(callback) {
+                if (isValidMongoId(params.hostId)) {
+                    callback(null, '');
+                } else {
+                    callback('invalid hostId', '');
+                }
+            },
+
+            function(callback) {
+
+                if (validCollectors.indexOf(params.collector)) {
+                    // this is a valid collector in the system
+                    callback(null,'');
+                } else {
+                    callback(null,'collector '+params.collector+' not valid');
+                }
+
+            }
+
+        ], function(err, results) {
+
+            if (err) {
+                res.send(500, {}, {'error':err});
+            } else {
+
+                // grab the data from hostCollectorStatus and return it
+
+                db.collection('hostCollectorStatus', function (err, collection) {
+                    collection.find({'hostId':new mongodb.ObjectID(params.hostId)}).sort({'_id':-1}).toArray(function(err, docs) {
+                        if (err) {
+                            res.send(500, {}, {'error':err});
+                        } else {
+                            res.send({'success':1, 'collectors':docs});
+                        }
+                    });
+                });
+
+            }
+        });
+
+	});
+});
+
+/*
+GET /collector - get collector detail for a host
+
+AUTH REQUIRED
+
+REQUEST URL PARAMS
+hostId* - STR id of the host
+collector* - STR name of the collector
+dataId* - STR id of the data to return
+
+
+RESPONSE CODES
+200 - Valid Zone
+	returns json document collector
+400 - Unauthorized
+	returns nothing
+*/
+router.get('/collector').bind(function (req, res, params) {
+	auth(params.username, params.password, false, req, res, function (err, docs) {
+
+        async.series([
+
+            function(callback) {
+                checkParams(params, ['hostId','collector','dataId'], function (err) {
+                    callback(err, '');
+                });
+            },
+
+            function(callback) {
+                if (isValidMongoId(params.hostId)) {
+                    callback(null, '');
+                } else {
+                    callback('invalid hostId', '');
+                }
+            },
+
+            function(callback) {
+
+                if (validCollectors.indexOf(params.collector)) {
+                    // this is a valid collector in the system
+                    callback(null,'');
+                } else {
+                    callback(null,'collector '+params.collector+' not valid');
+                }
+
+            }
+
+        ], function(err, results) {
+
+            if (err) {
+                res.send(500, {}, {'error':err});
+            } else {
+
+                colReqs[params.collector].serverApiRequest(db, params.hostId, params.dataId, function (err, data) {
+                    if (err) {
+                        res.send(500, {}, {'error':err});
+                    } else {
+                        res.send({'success':1, 'collector':data});
+                    }
+                });
+            }
+        });
+
 	});
 });
 
@@ -1513,6 +1578,9 @@ db.ensureIndex('admins', 'username', {'unique':true}, function(err, name) { if (
 
 // adminWriteLog
 db.ensureIndex('adminWriteLog', 'username', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
+
+// hostCollectorStatus
+db.ensureIndex('hostCollectorStatus', '{hostId:1,collector:1}', {'unique':false}, function(err, name) { if (err) { console.log(err) } });
 
 // ensure there is an admin account
 db.collection('admins', function (err, collection) {

@@ -555,6 +555,23 @@
                     $('#hostViewEncryption').html(data.host.encryption);
                     $('#hostViewEncryptionKey').html(data.host.encryptionKey);
 
+                    apiCall('/collectors','GET',{'hostId':hostId}, function (err, data) {
+                        if (err) {
+                            alert(err.error);
+                        } else {
+                            var h = '<h2>Collectors<h2>';
+                            for (var i=0; i<data.collectors.length; i++) {
+                                h += '<h4>'+data.collectors[i].collector+'</h4>';
+                                h += '<ul>';
+                                for (var y=0; y<data.collectors[i].status.length; y++) {
+                                    h += '<li>'+data.collectors[i].status[y].text+'</li>';
+                                }
+                                h += '</ul>';
+                            }
+                            $('#hostViewCollectors').html(h);
+                        }
+                    });
+
                     function dMap() {
                         var map = new google.maps.Map(document.getElementById("hostViewMap"), defMapOptions);
                         var LatLngList = new Array();
