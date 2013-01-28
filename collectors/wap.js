@@ -4,7 +4,7 @@ var crypto = require('crypto');
 
 // incomingData from listener
 exports.incomingData = function (db, data, host) {
-    if (db) {
+    if (db && data.length>0) {
 
         var o = {};
         o.hostId = host._id;
@@ -14,20 +14,20 @@ exports.incomingData = function (db, data, host) {
         // loop through each interface
         for (i=0; i<data.length; i++) {
             // check that data is real
-            if (data[i] != undefined) {
-                if (data[i].stations) {
-                    var idh = crypto.createHash('md5').update(data[i].interface).digest('hex');
-                    var t = {'id':idh,'text':data[i].interface+': '+data[i].stations.length+' connected stations'};
-                }
+            if (typeof data[i].interface != undefined) {
+                var idh = crypto.createHash('md5').update(data[i].interface).digest('hex');
+                var t = {'id':idh,'text':data[i].interface+': '+data[i].stations.length+' connected stations'};
                 o.status.push(t);
             }
         }
 
-        // update hostCollectorStatus
-        db.collection('hostCollectorStatus', function (err, collection) {
-            collection.update({'hostId':host._id,'collector':'wap'}, o, {'safe':false,'upsert':true}, function (err, objects) {
+        if (o.status.length>0) {
+            // update hostCollectorStatus
+            db.collection('hostCollectorStatus', function (err, collection) {
+                collection.update({'hostId':host._id,'collector':'wap'}, o, {'safe':false,'upsert':true}, function (err, objects) {
+                });
             });
-        });
+        }
     }
 };
 

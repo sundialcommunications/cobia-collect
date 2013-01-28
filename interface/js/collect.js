@@ -563,8 +563,8 @@
                             for (var i=0; i<data.collectors.length; i++) {
                                 h += '<h4>'+data.collectors[i].collector+'</h4>';
                                 h += '<ul>';
-                                for (var y=0; y<data.collectors[i].status.length; y++) {
-                                    h += '<li>'+data.collectors[i].status[y].text+'</li>';
+                                for (var y=0; y<data.collectors[i]['status'].length; y++) {
+                                    h += '<li>'+data.collectors[i]['status'][y].text+'</li>';
                                 }
                                 h += '</ul>';
                             }

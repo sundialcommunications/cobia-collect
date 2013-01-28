@@ -4,7 +4,7 @@ var crypto = require('crypto');
 
 // incomingData from listener
 exports.incomingData = function (db, data, host) {
-    if (db) {
+    if (db && data.load) {
 
         var o = {};
         o.hostId = host._id;
@@ -18,7 +18,6 @@ exports.incomingData = function (db, data, host) {
         // update rrd with hash
         db.collection('systemCollector', function (err, collection) {
             collection.find({'hostId':host._id,'hash':idhL}).toArray(function(err, docs) {
-                console.log(docs);
                 if (docs.length>0) {
                     var d = docs[0].d;
                 } else {
@@ -58,11 +57,13 @@ exports.incomingData = function (db, data, host) {
             }
         }
 
-        // update hostCollectorStatus
-        db.collection('hostCollectorStatus', function (err, collection) {
-            collection.update({'hostId':host._id,'collector':'system'}, o, {'safe':false,'upsert':true}, function (err, objects) {
+        if (o.status.length>0) {
+            // update hostCollectorStatus
+            db.collection('hostCollectorStatus', function (err, collection) {
+                collection.update({'hostId':host._id,'collector':'system'}, o, {'safe':false,'upsert':true}, function (err, objects) {
+                });
             });
-        });
+        }
     }
 };
 

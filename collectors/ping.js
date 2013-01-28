@@ -4,7 +4,7 @@ var crypto = require('crypto');
 
 // incomingData from listener
 exports.incomingData = function (db, data, host) {
-    if (db) {
+    if (db && data.length>0) {
 
         var o = {};
         o.hostId = host._id;
@@ -21,11 +21,13 @@ exports.incomingData = function (db, data, host) {
             }
         }
 
-        // update hostCollectorStatus
-        db.collection('hostCollectorStatus', function (err, collection) {
-            collection.update({'hostId':host._id,'collector':'ping'}, o, {'safe':false,'upsert':true}, function (err, objects) {
+        if (o.status.length>0) {
+            // update hostCollectorStatus
+            db.collection('hostCollectorStatus', function (err, collection) {
+                collection.update({'hostId':host._id,'collector':'ping'}, o, {'safe':false,'upsert':true}, function (err, objects) {
+                });
             });
-        });
+        }
     }
 };
 
