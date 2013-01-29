@@ -4,6 +4,7 @@
 
 # client script for cobia-collect
 # run as cron job every 5 minutes
+# */5 * * * * /usr/bin/php /home/zip/cobia-collect-linux-client.php >> /dev/null 2>&1
 # sends collector data for ping, wap, interface, and system data
 
 ##### REQUIREMENTS ######
