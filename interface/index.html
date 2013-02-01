@@ -74,6 +74,27 @@
         display: block;
         float: right;
     }
+#hostViewChart {
+    font: 10px sans-serif;
+    width: 100%;
+    background-color: #eee;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
     </style>
     <!--<link href="css/bootstrap-responsive.css" rel="stylesheet">-->
 
@@ -98,7 +119,7 @@
 
       <form class="form-signin">
         <h2 class="form-signin-heading">Please sign in</h2>
-        <input id="loginUsername" type="text" class="input-block-level" placeholder="Email address">
+        <input id="loginUsername" type="text" class="input-block-level" placeholder="Username">
         <input id="loginPassword" type="password" class="input-block-level" placeholder="Password">
         <p id="loginErr" class="alert"></p>
         <button id="loginButton" class="btn btn-large btn-primary" type="submit">Sign in</button>
@@ -254,6 +275,8 @@
 <div class="span4"><span class="label label-info">WDS:</span> <span class="editable" contenteditable="true" id="hostViewWds"></span></div>
 </div>
 
+<div id="hostViewChart"></div>
+
 <div id="hostViewCollectors"></div>
 
         </div><!--hostView-->
@@ -299,6 +322,7 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=&sensor=false"></script>
     <script src="js/config.js"></script>
     <script src="js/collect.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
 
   </body>
 </html>

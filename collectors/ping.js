@@ -12,11 +12,11 @@ exports.incomingData = function (db, data, host) {
         o.status = [];
 
         // loop through each host
-        for (i=0; i<data.length; i++) {
+        for (var i=0; i<data.length; i++) {
             // check that data is real
             if (data[i] != undefined) {
-                var idh = crypto.createHash('md5').update(data[i].host).digest('hex')
-                var t = {'id':idh,'text':'host: '+data[i].host+' - avgRtt: '+data[i].avgRtt+', loss: '+data[i].loss+', minRtt: '+data[i].minRtt+', maxRtt: '+data[i].maxRtt};
+                var idh = crypto.createHash('md5').update(data[i].host).digest('hex');
+                var t = {'hash':idh,'hashTitle':data[i].host+' average RTT','overviewText':data[i].host+' - avgRtt: '+data[i].avgRtt+', loss: '+data[i].loss+', minRtt: '+data[i].minRtt+', maxRtt: '+data[i].maxRtt,'alert':0};
                 o.status.push(t);
             }
         }
@@ -32,7 +32,7 @@ exports.incomingData = function (db, data, host) {
 };
 
 // a request to this collector from the server api, likely an interface wanting data
-exports.serverApiRequest = function (db, hostId, dataId, callback) {
+exports.serverApiRequest = function (db, hostId, hash, callback) {
 
     db.collection('pingCollector', function (err, collection) {
         collection.find({'hostId':new mongodb.ObjectID(hostId)}).toArray(function(err, docs) {

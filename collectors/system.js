@@ -11,9 +11,9 @@ exports.incomingData = function (db, data, host) {
         o.collector = 'system';
         o.status = [];
 
-        // create hash for load
-        var idhL = crypto.createHash('md5').update('load').digest('hex');
-        o.status.push({'id':idhL,'text':'load '+data.load.one+' '+data.load.five+' '+data.load.fifteen+', processes: '+data.load.processCount});
+        // create hash for one minute load
+        var idhL = crypto.createHash('md5').update('loadone').digest('hex');
+        o.status.push({'hash':idhL,'hashTitle':'System Load (1m)','overviewText':'load '+data.load.one+' '+data.load.five+' '+data.load.fifteen+', processes: '+data.load.processCount,'alert':0});
 
         // update rrd with hash
         db.collection('systemCollector', function (err, collection) {
@@ -30,8 +30,8 @@ exports.incomingData = function (db, data, host) {
         });
 
         // create hash for memory
-        idhM = crypto.createHash('md5').update('memory').digest('hex');
-        o.status.push({'id':idhM,'text':'memory total: '+data.memory.total+', free: '+data.memory.free+', buffers: '+data.memory.buffers+', cached: '+data.memory.cached});
+        idhM = crypto.createHash('md5').update('memoryfree').digest('hex');
+        o.status.push({'hash':idhM,'hashTitle':'Free Memory','overviewText':'memory total: '+data.memory.total+', free: '+data.memory.free+', buffers: '+data.memory.buffers+', cached: '+data.memory.cached,'alert':0});
 
         // update rrd with hash
         db.collection('systemCollector', function (err, collection) {
@@ -52,7 +52,7 @@ exports.incomingData = function (db, data, host) {
             // check that data is real
             if (data.disks[i] != undefined) {
                 var idh = crypto.createHash('md5').update('mount::'+data.disks[i].mount).digest('hex');
-                var t = {'id':idh,'text':'mount '+data.disks[i].mount+' - used: '+data.disks[i].used+', avail: '+data.disks[i].avail};
+                var t = {'hash':null,'hashTitle':'Free Disk Space on '+data.disks[i].mount,'overviewText':'mount '+data.disks[i].mount+' - used: '+data.disks[i].used+', avail: '+data.disks[i].avail,'alert':0};
                 o.status.push(t);
             }
         }
@@ -68,10 +68,10 @@ exports.incomingData = function (db, data, host) {
 };
 
 // a request to this collector from the server api, likely an interface wanting data
-exports.serverApiRequest = function (db, hostId, dataId, callback) {
+exports.serverApiRequest = function (db, hostId, hash, callback) {
 
     db.collection('systemCollector', function (err, collection) {
-        collection.find({'hostId':new mongodb.ObjectID(hostId)}).toArray(function(err, docs) {
+        collection.find({'hostId':new mongodb.ObjectID(hostId),'hash':hash}).toArray(function(err, docs) {
             callback(err, docs[0]);
         });
     });

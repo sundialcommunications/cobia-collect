@@ -1369,7 +1369,7 @@ AUTH REQUIRED
 REQUEST URL PARAMS
 hostId* - STR id of the host
 collector* - STR name of the collector
-dataId* - STR id of the data to return
+hash* - STR id of the data to return
 
 
 RESPONSE CODES
@@ -1384,7 +1384,7 @@ router.get('/collector').bind(function (req, res, params) {
         async.series([
 
             function(callback) {
-                checkParams(params, ['hostId','collector','dataId'], function (err) {
+                checkParams(params, ['hostId','collector','hash'], function (err) {
                     callback(err, '');
                 });
             },
@@ -1414,7 +1414,7 @@ router.get('/collector').bind(function (req, res, params) {
                 res.send(500, {}, {'error':err});
             } else {
 
-                colReqs[params.collector].serverApiRequest(db, params.hostId, params.dataId, function (err, data) {
+                colReqs[params.collector].serverApiRequest(db, params.hostId, params.hash, function (err, data) {
                     if (err) {
                         res.send(500, {}, {'error':err});
                     } else {

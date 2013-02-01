@@ -511,7 +511,30 @@
 
         function hostView(hostId) {
 
+            // clear everything
             $('#hostViewMap').html('');
+
+            $('#hostViewUD').html('');
+            $('#hostViewNotes').html('');
+            $('#hostViewLogin').html('');
+            $('#hostViewKey').html('');
+            $('#hostViewLastUpdate').attr('title','');
+            $('#hostViewLastBootRequest').attr('title','');
+            $('#hostViewCreatedAt').attr('title','');
+            $('#hostViewUptime').html('');
+            $('#hostViewClientInfo').html('');
+            $('#hostViewVersion').html('');
+            $('#hostViewOutsideIp').html('');
+            $('#hostViewWanIp').html('');
+            $('#hostViewLatitude').html('');
+            $('#hostViewLongitude').html('');
+            $('#hostViewWirelessMode').html('');
+            $('#hostViewWds').html('');
+            $('#hostViewChannel').html('');
+            $('#hostViewVlan').html('');
+            $('#hostViewSsid').html('');
+            $('#hostViewEncryption').html('');
+            $('#hostViewEncryptionKey').html('');
 
             apiCall('/host','GET',{'hostId':hostId}, function (err, data) {
 
@@ -533,6 +556,7 @@
                         h += '<span class="label label-success">Stable</span>';
                     }
                     h += ' <a href="#" onClick="updateHost(\''+hostId+'\');" class="label label-info">Update Host</a></p>';
+
                     $('#hostViewUD').html(h);
                     $('#hostViewNotes').html(data.host.notes);
                     $('#hostViewLogin').html(data.host.login);
@@ -564,7 +588,11 @@
                                 h += '<h4>'+data.collectors[i].collector+'</h4>';
                                 h += '<ul>';
                                 for (var y=0; y<data.collectors[i]['status'].length; y++) {
-                                    h += '<li>'+data.collectors[i]['status'][y].text+'</li>';
+                                    if (data.collectors[i]['status'][y].hash == null) {
+                                        h += '<li>'+data.collectors[i]['status'][y].overviewText+'</li>';
+                                    } else {
+                                        h += '<li><a href="#" onClick="plotHostChart(\''+hostId+'\',\''+data.collectors[i].collector+'\',\''+data.collectors[i]['status'][y].hash+'\',\''+data.collectors[i]['status'][y].hashTitle+'\'); return false;">'+data.collectors[i]['status'][y].overviewText+'</a></li>';
+                                    }
                                 }
                                 h += '</ul>';
                             }
@@ -608,6 +636,72 @@
                     showView('hostView');
 
                 }
+
+            });
+
+        }
+
+        function plotHostChart(hostId, collector, hash, title) {
+
+            apiCall('/collector','GET',{'hostId':hostId,'collector':collector,'hash':hash}, function (err, data) {
+
+                $('#hostViewChart').html('');
+
+                var dd = [];
+
+var margin = {top: 20, right: 20, bottom: 30, left: 100},
+    width = $('#hostViewChart').width() - margin.left - margin.right,
+    height = 200 - margin.top - margin.bottom;
+
+                for (var i=0; i<Object.keys(data.collector.d).length; i++) {
+                    dd.push({'value':data.collector.d[Object.keys(data.collector.d)[i]].d,'date':Object.keys(data.collector.d)[i]});
+                }
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var line = d3.svg.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.value); });
+
+var svg = d3.select("#hostViewChart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+x.domain(d3.extent(dd, function(d) { return d.date; }));
+y.domain(d3.extent(dd, function(d) { return d.value; }));
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+  .append("text")
+    .attr("y", 6)
+    .attr("x", 6)
+    .attr("dy", ".91em")
+    .text(title);
+
+svg.append("path")
+    .datum(dd)
+    .attr("class", "line")
+    .attr("d", line);
 
             });
 

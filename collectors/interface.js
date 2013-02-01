@@ -16,7 +16,7 @@ exports.incomingData = function (db, data, host) {
             // check that data is real
             if (data[i] != undefined) {
                 var idh = crypto.createHash('md5').update(data[i].if).digest('hex');
-                var t = {'id':idh,'text':data[i].if+': '+data[i].recBytes+' bytes in, '+data[i].sentBytes+' bytes out'};
+                var t = {'hash':idh,'hashTitle':'Interface','overviewText':data[i].if+': '+data[i].recBytes+' bytes in, '+data[i].sentBytes+' bytes out','alert':0};
                 o.status.push(t);
             }
         }
@@ -32,7 +32,7 @@ exports.incomingData = function (db, data, host) {
 };
 
 // a request to this collector from the server api, likely an interface wanting data
-exports.serverApiRequest = function (db, hostId, dataId, callback) {
+exports.serverApiRequest = function (db, hostId, hash, callback) {
 
     db.collection('interfaceCollector', function (err, collection) {
         collection.find({'hostId':new mongodb.ObjectID(hostId)}).toArray(function(err, docs) {
