@@ -12,12 +12,17 @@ exports.incomingData = function (db, data, host) {
         o.status = [];
 
         // loop through each interface
-        for (i=0; i<data.length; i++) {
+        for (var i=0; i<data.length; i++) {
             // check that data is real
             if (typeof data[i].interface != undefined) {
                 var idh = crypto.createHash('md5').update(data[i].interface).digest('hex');
                 var t = {'hash':idh,'hashTitle':'MAC SIGNAL','overviewText':data[i].interface+': '+data[i].stations.length+' connected stations','alert':0};
                 o.status.push(t);
+                var rt = '';
+                for (var e=0; e<data[i].stations.length; e++) {
+                    rt += data[i].stations[e].mac+' - '+data[i].stations[e].rssi+"\n";
+                }
+                o.status.push({'hash':null,'hashTitle':'','overviewText':rt,'alert':0});
             }
         }
 

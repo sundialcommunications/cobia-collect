@@ -1,8 +1,13 @@
         // helper function for all API calls
         function apiCall(endpoint, requestType, requestData, callback) {
 
-            requestData.username = $('#loginUsername').val();
-            requestData.password = $('#loginPassword').val();
+            if ($.cookie('username') && $.cookie('password')) {
+                requestData.username = $.cookie('username');
+                requestData.password = $.cookie('password');
+            } else {
+                requestData.username = $('#loginUsername').val();
+                requestData.password = $('#loginPassword').val();
+            }
 
             var request = $.ajax({
             url: serverApi+endpoint,
@@ -589,7 +594,7 @@
                                 h += '<ul>';
                                 for (var y=0; y<data.collectors[i]['status'].length; y++) {
                                     if (data.collectors[i]['status'][y].hash == null) {
-                                        h += '<li>'+data.collectors[i]['status'][y].overviewText+'</li>';
+                                        h += '<li><pre>'+data.collectors[i]['status'][y].overviewText+'</pre></li>';
                                     } else {
                                         h += '<li><a href="#" onClick="plotHostChart(\''+hostId+'\',\''+data.collectors[i].collector+'\',\''+data.collectors[i]['status'][y].hash+'\',\''+data.collectors[i]['status'][y].hashTitle+'\'); return false;">'+data.collectors[i]['status'][y].overviewText+'</a></li>';
                                     }
@@ -942,12 +947,12 @@ svg.append("path")
 
         // login if cookie exists
         if ($.cookie('username') && $.cookie('password')) {
-            $('#loginUsername').val($.cookie('username'));
-            $('#loginPassword').val($.cookie('password'));
             apiCall('/auth','GET',{}, function (err, data) {
                 if (!err) {
                     doLogin();
                 } else {
+                    $.removeCookie('username');
+                    $.removeCookie('password');
                     $('#loginErr').html(err.error);
                 }
             });

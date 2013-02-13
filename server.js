@@ -14,6 +14,11 @@ Array.prototype.hasValue = function(value) {
 }
 
 function isValidMongoId(id) {
+
+    if (!id) {
+        return false;
+    }
+
     id = id.toLowerCase();
     var validChar='0123456789abcdef';
     var v = true;
