@@ -456,7 +456,7 @@
 
                     }
 
-                    $('#groupViewUD').html('<p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a> <a href="#" onClick="updateGroup(\''+groupId+'\');" class="label label-info">Update Group</a></p>');
+                    $('#groupViewUD').html('<p><span class="label label-success">'+data.group.numUp+' up</span> <span class="label label-important">'+data.group.numDown+' down</span> <a href="#" onClick="deleteGroup(\''+groupId+'\');" class="label label-warning">Delete Group</a> <a href="#" onClick="updateGroup(\''+groupId+'\');" class="label label-info">Update Group</a> <a href="#" onClick="rebootGroup(\''+groupId+'\');" class="label label-warning">Reboot Group</a></p>');
 
                     function dMap() {
                         var map = new google.maps.Map(document.getElementById("groupViewMap"), defMapOptions);
@@ -778,6 +778,35 @@ svg.append("path")
                 }
 
             });
+        }
+        
+        function rebootGroup(groupId) {
+        	console.log(groupId);
+
+						apiCall('/hosts','GET',{'groupId':groupId}, function (err, data) {
+
+                if (err) {
+                    alert(err.error);
+                } else {
+                    for (var i in data.hosts) {
+                    			
+                    			apiCall('/host','PUT',{'hostId':data.hosts[i]._id,'reboot':1}, function (err, data) {
+
+                if (err) {
+                    console.log(err.error);
+                } else {
+                    console.log('Host Rebooted');
+                }
+
+            });
+                    			
+                    			}
+                    			alert('hosts in group rebooted')
+                    		}
+                    		
+                    		
+         });
+         
         }
 
         function updateHost(hostId) {
