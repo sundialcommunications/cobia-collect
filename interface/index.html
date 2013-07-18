@@ -219,31 +219,31 @@
         </div><!--newHostView-->
 
         <div class="defHide" id="zoneView">
-        <h2 id="zoneViewTitle" class="editable" style="float: none;" contenteditable="true"></h2>
+        <h2 id="zoneViewTitle" class="editable" style="float: none;" onpaste="handlepaste(this, event)" contenteditable="true"></h2>
           <div id="zoneViewUD"></div>
-          <p><pre id="zoneViewNotes" contenteditable="true" class="notesHolder"></pre></p>
+          <p><pre id="zoneViewNotes" onpaste="handlepaste(this, event)" contenteditable="true" class="notesHolder"></pre></p>
           <div id="zoneViewMap"></div>
         <div id="zoneViewGroups"></div>
         </div><!--zoneView-->
 
         <div class="defHide" id="groupView">
-        <h2 id="groupViewTitle" class="editable" style="float: none;" contenteditable="true"></h2>
+        <h2 id="groupViewTitle" class="editable" style="float: none;" onpaste="handlepaste(this, event)" contenteditable="true"></h2>
           <div id="groupViewUD"></div>
-          <p><pre id="groupViewNotes" contenteditable="true" class="notesHolder"></pre></p>
+          <p><pre id="groupViewNotes" onpaste="handlepaste(this, event)" contenteditable="true" class="notesHolder"></pre></p>
           <div id="groupViewMap"></div>
         <div id="groupViewHosts"></div>
         </div><!--groupView-->
 
         <div class="defHide" id="hostView">
-        <h2 id="hostViewTitle" class="editable" style="float: none;" contenteditable="true"></h2>
+        <h2 id="hostViewTitle" class="editable" style="float: none;" onpaste="handlepaste(this, event)" contenteditable="true"></h2>
         <div id="hostViewUD"></div>
-        <p><pre id="hostViewNotes" contenteditable="true" class="notesHolder"></pre></p>
+        <p><pre id="hostViewNotes" onpaste="handlepaste(this, event)" contenteditable="true" class="notesHolder"></pre></p>
         <div id="hostViewMap"></div>
         <br /><br />
 
 <div class="row-fluid">
-<div class="span4"><span class="label label-info">Login:</span> <span class="editable" contenteditable="true" id="hostViewLogin"></span></div>
-<div class="span4"><span class="label label-info">Key:</span> <span class="editable" contenteditable="true" id="hostViewKey"></span></div>
+<div class="span4"><span class="label label-info">Login:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewLogin"></span></div>
+<div class="span4"><span class="label label-info">Key:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewKey"></span></div>
 <div class="span4"><span class="label label-info">Last Update:</span> <span style="float: right;" class="epochago" id="hostViewLastUpdate"></span></div>
 </div>
 <div class="row-fluid">
@@ -258,21 +258,21 @@
 </div>
 <div class="row-fluid">
 <div class="span4"><span class="label label-info">WAN IP:</span> <span style="float: right;" id="hostViewWanIp"></span></div>
-<div class="span4"><span class="label label-info">Latitude:</span> <span class="editable" contenteditable="true" id="hostViewLatitude"></span></div>
-<div class="span4"><span class="label label-info">Longitude:</span> <span class="editable" contenteditable="true" id="hostViewLongitude"></span></div>
+<div class="span4"><span class="label label-info">Latitude:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewLatitude"></span></div>
+<div class="span4"><span class="label label-info">Longitude:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewLongitude"></span></div>
 </div>
 <div class="row-fluid">
-<div class="span4"><span class="label label-info">Wireless Mode:</span> <span class="editable" contenteditable="true" id="hostViewWirelessMode"></span></div>
-<div class="span4"><span class="label label-info">Channel:</span> <span class="editable" contenteditable="true" id="hostViewChannel"></span></div>
-<div class="span4"><span class="label label-info">VLAN:</span> <span class="editable" contenteditable="true" id="hostViewVlan"></span></div>
+<div class="span4"><span class="label label-info">Wireless Mode:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewWirelessMode"></span></div>
+<div class="span4"><span class="label label-info">Channel:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewChannel"></span></div>
+<div class="span4"><span class="label label-info">VLAN:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewVlan"></span></div>
 </div>
 <div class="row-fluid">
-<div class="span4"><span class="label label-info">SSID:</span> <span class="editable" contenteditable="true" id="hostViewSsid"></span></div>
-<div class="span4"><span class="label label-info">Encryption:</span> <span class="editable" contenteditable="true" id="hostViewEncryption"></span></div>
-<div class="span4"><span class="label label-info">Encryption Key:</span> <span class="editable" contenteditable="true" id="hostViewEncryptionKey"></span></div>
+<div class="span4"><span class="label label-info">SSID:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewSsid"></span></div>
+<div class="span4"><span class="label label-info">Encryption:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewEncryption"></span></div>
+<div class="span4"><span class="label label-info">Encryption Key:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewEncryptionKey"></span></div>
 </div>
 <div class="row-fluid">
-<div class="span4"><span class="label label-info">WDS:</span> <span class="editable" contenteditable="true" id="hostViewWds"></span></div>
+<div class="span4"><span class="label label-info">WDS:</span> <span class="editable" onpaste="handlepaste(this, event)" contenteditable="true" id="hostViewWds"></span></div>
 </div>
 
 <div id="hostViewChart"></div>
