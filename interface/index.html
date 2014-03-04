@@ -140,12 +140,12 @@
           <a class="brand" href="#" onClick="window.location='/';">cobia-collect</a>
           <div class="nav-collapse collapse">
             <p class="navbar-text pull-right">
-              Logged in as <a href="#" id="logout" onClick="logOut();" class="navbar-link"></a>
+              Logged in as <a href="#" id="logout" onClick="logOut(); return false;" class="navbar-link"></a>
             </p>
             <ul class="nav">
-              <li><a href="#" id="newZone">New Zone</a></li>
-              <li><a href="#" id="newGroup">New Group</a></li>
-              <li><a href="#" id="newHost">New Host</a></li>
+              <li><a href="#" onClick="newZoneView(); return false;">New Zone</a></li>
+              <li><a href="#" onClick="newGroupView(); return false;">New Group</a></li>
+              <li><a href="#" onClick="newHostView(); return false;">New Host</a></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -160,8 +160,8 @@
             </ul>
             <ul id="adminNav" class="nav nav-list">
               <li class="nav-header">ADMIN</li>
-              <li><a href="#" onClick="accountsView();">Accounts</a></li>
-              <li><a href="#" onClick="writeLogView();">Write Log</a></li>
+              <li><a href="#" onClick="accountsView(); return false;">Accounts</a></li>
+              <li><a href="#" onClick="writeLogView(); return false;">Write Log</a></li>
             </ul>
             <ul id="colsNav" class="nav nav-list">
             </ul>
@@ -320,7 +320,7 @@
     <script src="js/jquery.epochago.js"></script>
     <script src="js/bootstrap.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=&sensor=false"></script>
-    <script src="js/config.js"></script>
+    <script src="js/defMap.js"></script>
     <script src="js/collect.js"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
 

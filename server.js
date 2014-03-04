@@ -5,6 +5,10 @@ var mongodb = require('mongodb');
 var async = require('async');
 var bcrypt = require('bcrypt');
 var db = new mongodb.Db(config.mongo.dbname, new mongodb.Server(config.mongo.host, config.mongo.port, {'auto_reconnect':true}), {journal:true});
+var net = require('net');
+var http = require('http');
+var https = require('https');
+var static = require('node-static');
 
 // Array.hasValue
 Array.prototype.hasValue = function(value) {
@@ -1437,14 +1441,26 @@ router.get('/collector').bind(function (req, res, params) {
 db.open(function (err, db) {
 if (db) {
 
-require('http').createServer(function (request, response) {
+var options = {
+  key: fs.readFileSync('./keys/privatekey.pem'),
+  cert: fs.readFileSync('./keys/certificate.pem')
+};
+
+var fss = new static.Server('./interface');
+
+https.createServer(options, httpsConnection).listen(8443);
+console.log('listening on port 8443');
+
+function httpsConnection(request, response) {
 
     if (request.method == 'OPTIONS') {
 
         response.writeHead(200, {'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS, DELETE'});
         response.end();
 
-    } else {
+    } else if (request.url.indexOf('/api') === 0) {
+
+    request.url = request.url.substring(4);
 
     var body = "";
     request.addListener('data', function (chunk) { body += chunk });
@@ -1458,11 +1474,16 @@ require('http').createServer(function (request, response) {
             console.log('###### '+request.method+' '+request.url+" ######\n"+result.body);
         });
     });
+    } else {
+
+        console.log(request.url);
+        request.addListener('end', function() {
+            fss.serve(request, response);
+        }).resume();
 
     }
 
-}).listen(8551);
-console.log('listening on port 8551');
+}
 
 }
 });
