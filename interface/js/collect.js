@@ -1,7 +1,9 @@
 window.onpopstate = function(event) {
     //console.log("location: " + document.location + ", state: " + JSON.stringify(event.state));
-    var f = window[event.state.viewName];
-    f.apply(window, event.state.params);
+    if (event.state != null) {
+        var f = window[event.state.viewName];
+        f.apply(window, event.state.params);
+    }
 };
 
         // helper function for all API calls
@@ -48,7 +50,7 @@ window.onpopstate = function(event) {
 
                         var h = '<li class="nav-header">ZONES</li>';
                         for (var i in data.zones) {
-                            h += '<li><a href="#" onClick="zoneView(\''+data.zones[i]._id+'\'); return false;">'+data.zones[i].name+' ('+data.zones[i].numUp+'/'+data.zones[i].numTotal+')';
+                            h += '<li><a href="#" onClick="zoneView(\''+data.zones[i]._id+'\',false); return false;">'+data.zones[i].name+' ('+data.zones[i].numUp+'/'+data.zones[i].numTotal+')';
 
                             if (data.zones[i].numDown>0) {
                                 h += ' <span style="float: right;" class="label label-important">Hosts Down</span>';
@@ -287,7 +289,7 @@ window.onpopstate = function(event) {
             });
         });
 
-        function zoneView(zoneId,isBack=false) {
+        function zoneView(zoneId,isBack) {
 
             $('#zoneViewMap').html('');
 
@@ -325,7 +327,7 @@ window.onpopstate = function(event) {
                         }
                         h += '</p>';
                         h += '<p><pre class="notesHolder">'+data.groups[i].notes+'</pre></p>';
-                        h += '<p><a class="btn" href="#" onClick="groupView(\''+data.groups[i]._id+'\'); return false;">View group &raquo;</a></p>';
+                        h += '<p><a class="btn" href="#" onClick="groupView(\''+data.groups[i]._id+'\',false); return false;">View group &raquo;</a></p>';
                         h += '</div><!--/span-->';
 
                         if (c%3 == 2) {
@@ -354,7 +356,7 @@ window.onpopstate = function(event) {
                                         mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
                                     }
                                     var marker = new google.maps.Marker(mo);
-                                    marker.html = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\'); return false;">'+data.hosts[i].name+'</a></h3>';
+                                    marker.html = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\',false); return false;">'+data.hosts[i].name+'</a></h3>';
                                     var iw = new google.maps.InfoWindow({content:'loading...'});
 
                                     google.maps.event.addListener(marker, 'click', function() {
@@ -388,7 +390,7 @@ window.onpopstate = function(event) {
 
         }
 
-        function groupView(groupId,isBack=false) {
+        function groupView(groupId,isBack) {
 
             $('#groupViewMap').html('');
 
@@ -448,7 +450,7 @@ window.onpopstate = function(event) {
                         }
                         data.group.numTotal += 1;
                         h += '</p>';
-                        h += '<p><a class="btn" href="#" onClick="hostView(\''+data.hosts[i]._id+'\'); return false;">View host &raquo;</a></p>';
+                        h += '<p><a class="btn" href="#" onClick="hostView(\''+data.hosts[i]._id+'\',false); return false;">View host &raquo;</a></p>';
                         h += '</div><!--/span-->';
 
                         if (c%3 == 2) {
@@ -474,7 +476,7 @@ window.onpopstate = function(event) {
                                     mo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|468847';
                                 }
                                 var marker = new google.maps.Marker(mo);
-                                marker.html = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\'); return false;">'+data.hosts[i].name+'</a></h3>';
+                                marker.html = '<h3>host: <a href="#" onClick="hostView(\''+data.hosts[i]._id+'\',false); return false;">'+data.hosts[i].name+'</a></h3>';
 
                                 if (data.hosts[i].version) {
                                     marker.html += '<p><span class="label label-info">Version:</span> '+data.hosts[i].version+'</p>';
@@ -517,7 +519,7 @@ window.onpopstate = function(event) {
 
         }
 
-        function hostView(hostId,isBack=false) {
+        function hostView(hostId,isBack) {
 
             // clear everything
             $('#hostViewMap').html('');
@@ -621,7 +623,7 @@ window.onpopstate = function(event) {
                             }
                             var marker = new google.maps.Marker(mo);
 
-                            var c = '<h3>host: <a href="#" onClick="hostView(\''+data.host._id+'\'); return false;">'+data.host.name+'</a></h3>';
+                            var c = '<h3>host: <a href="#" onClick="hostView(\''+data.host._id+'\',false); return false;">'+data.host.name+'</a></h3>';
 
                             var iw = new google.maps.InfoWindow({content:c});
                             google.maps.event.addListener(marker, 'click', function() {
@@ -722,7 +724,7 @@ svg.append("path")
                     alert(err.error);
                 } else {
                     alert('Zone Updated');
-                    zoneView(zoneId);
+                    zoneView(zoneId,false);
                     loopData();
                 }
 
@@ -736,7 +738,7 @@ svg.append("path")
                     alert(err.error);
                 } else {
                     alert('Zone Deleted');
-                    zoneView(zoneId);
+                    zoneView(zoneId,false);
                     loopData();
                 }
 
@@ -750,7 +752,7 @@ svg.append("path")
                     alert(err.error);
                 } else {
                     alert('Group Updated');
-                    groupView(groupId);
+                    groupView(groupId,false);
                 }
 
             });
@@ -777,7 +779,7 @@ svg.append("path")
                     alert(err.error);
                 } else {
                     alert('Host Rebooted');
-                    hostView(hostId);
+                    hostView(hostId,false);
                 }
 
             });
@@ -819,7 +821,7 @@ svg.append("path")
                     alert(err.error);
                 } else {
                     alert('Host Updated');
-                    hostView(hostId);
+                    hostView(hostId,false);
                 }
 
             });
