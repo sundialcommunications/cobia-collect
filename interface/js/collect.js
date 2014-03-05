@@ -95,7 +95,7 @@ window.onpopstate = function(event) {
             // set background-color to white
             $('body').css({'background-color':'#fff'});
             // set logout username
-            $('#logout').html($('#loginUsername').val());
+            $('#logout').html($.cookie('username')+' X');
             // hide #preAuthDisplay and show #postAuthDisplay
             $('#preAuthDisplay').hide('slow');
             $('#postAuthDisplay').show('slow');
