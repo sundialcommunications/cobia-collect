@@ -961,8 +961,12 @@ svg.append("path")
 
                         if (data.adminLog[i].request.indexOf('DELETE') == 0) {
                             h += '<div class="alert alert-error">';
-                        } else {
+                        } else if (data.adminLog[i].request.indexOf('PUT') == 0) {
+                            h += '<div class="alert alert-warning">';
+                        } else if (data.adminLog[i].request.indexOf('POST') == 0) {
                             h += '<div class="alert alert-success">';
+                        } else {
+                            h += '<div class="alert alert-info">';
                         }
                         h += '<h4>' + data.adminLog[i].username + ' <span class="epochago">'+data.adminLog[i].ts+'</span></h4>';
                         h += '<p>' + data.adminLog[i].request + '</p>';
