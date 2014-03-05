@@ -91,15 +91,15 @@ for any method which requires authorization, simple provide the following 2 para
 username
 password
 */
-function auth(username, password, writePermReq, req, res, callback) {
-    if (username == undefined || password == undefined) {
+function auth(params, writePermReq, req, res, callback) {
+    if (params.username == undefined || params.password == undefined) {
 		res.send(401);
     } else {
 
 	db.collection('admins', function (err, collection) {
-		collection.find({'username':username}).toArray(function(err, docs) {
+		collection.find({'username':params.username}).toArray(function(err, docs) {
             if (docs.length>0) {
-                var match = bcrypt.compareSync(password, docs[0].password);
+                var match = bcrypt.compareSync(params.password, docs[0].password);
 			    if (docs.length == 0 || match == false) {
                     res.send(401);
 			    } else if (docs[0].readOnly == 1 && writePermReq == true) {
@@ -111,7 +111,8 @@ function auth(username, password, writePermReq, req, res, callback) {
                     if (writePermReq == true) {
                         // log admin write activity
                         db.collection('adminWriteLog', function (err, collection) {
-                            collection.insert({'username':username, 'request':String(req.method+' '+req.url.pathname), 'ts':Math.round((new Date()).getTime() / 1000)}, function(err, docs) {
+                            delete params.password
+                            collection.insert({'username':params.username, 'request':String(req.method+' '+req.url.pathname), 'ts':Math.round((new Date()).getTime() / 1000), 'params':params}, function(err, docs) {
                             });
                         });
                     }
@@ -141,7 +142,7 @@ RESPONSE CODES
 	returns {error:err}
 */
 router.get('/auth').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (docs) {
+	auth(params, false, req, res, function (docs) {
         res.send({'success':1});
 	});
 });
@@ -160,7 +161,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/adminLog').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (docs) {
+	auth(params, true, req, res, function (docs) {
 
             db.collection('adminWriteLog', function (err, collection) {
                 collection.find({}).sort({'_id':-1}).limit(50).toArray(function(err, docs) {
@@ -189,7 +190,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/admins').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (docs) {
+	auth(params, false, req, res, function (docs) {
 
             db.collection('admins', function (err, collection) {
                 collection.find({}).toArray(function(err, docs) {
@@ -219,7 +220,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/admin').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['adminUsername'], function (err) {
 
@@ -265,7 +266,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/admin').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             checkParams(params, ['adminUsername','adminPassword','adminEmail','adminReadOnly'], function (err) {
 
@@ -310,7 +311,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.put('/admin').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -369,7 +370,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/admin').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             checkParams(params, ['adminUsername'], function (err) {
 
@@ -411,7 +412,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/zones').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (docs) {
+	auth(params, false, req, res, function (docs) {
 
             db.collection('zones', function (err, collection) {
                 collection.find({}).toArray(function(err, docs) {
@@ -441,7 +442,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
@@ -486,7 +487,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             checkParams(params, ['name','notes'], function (err) {
 
@@ -527,7 +528,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.put('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -586,7 +587,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/zone').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
 
@@ -649,7 +650,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/groups').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
@@ -691,7 +692,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['groupId'], function (err) {
 
@@ -738,7 +739,7 @@ RESPONSE CODES
 */
 
 router.post('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -801,7 +802,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.put('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -860,7 +861,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/group').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
                 function(callback) {
@@ -920,7 +921,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/hosts').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['groupId'], function (err) {
 
@@ -962,7 +963,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/hostsForZone').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['zoneId'], function (err) {
 
@@ -1004,7 +1005,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             checkParams(params, ['hostId'], function (err) {
 
@@ -1061,7 +1062,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.post('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             async.series([
 
@@ -1141,7 +1142,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.put('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
             console.log(params);
 
             async.series([
@@ -1252,7 +1253,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.del('/host').bind(function (req, res, params) {
-	auth(params.username, params.password, true, req, res, function (err, docs) {
+	auth(params, true, req, res, function (err, docs) {
 
             checkParams(params, ['hostId'], function (err) {
 
@@ -1293,7 +1294,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/globalCollectors').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
             res.send({'success':1, 'collectors':validCollectors});
 
@@ -1317,7 +1318,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/collectors').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
         async.series([
 
@@ -1388,7 +1389,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/collector').bind(function (req, res, params) {
-	auth(params.username, params.password, false, req, res, function (err, docs) {
+	auth(params, false, req, res, function (err, docs) {
 
         async.series([
 
@@ -1448,8 +1449,8 @@ var options = {
 
 var fss = new static.Server('./interface');
 
-https.createServer(options, httpsConnection).listen(8443);
-console.log('listening on port 8443');
+https.createServer(options, httpsConnection).listen(config.serverPort);
+console.log('listening on port '+config.serverPort);
 
 function httpsConnection(request, response) {
 

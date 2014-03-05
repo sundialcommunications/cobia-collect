@@ -2,6 +2,9 @@
 
 var config = {}
 
+config.serverPort = 8443;
+config.listenerPort = 8550;
+
 config.mongo = {};
 
 config.mongo.dbname = 'collect';

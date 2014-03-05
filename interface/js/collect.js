@@ -966,6 +966,7 @@ svg.append("path")
                         }
                         h += '<h4>' + data.adminLog[i].username + ' <span class="epochago">'+data.adminLog[i].ts+'</span></h4>';
                         h += '<p>' + data.adminLog[i].request + '</p>';
+                        h += '<p>' + JSON.stringify(data.adminLog[i].params) + '</p>';
                         h += '</div>';
 
                     }

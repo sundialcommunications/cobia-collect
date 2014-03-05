@@ -136,7 +136,7 @@ require('http').createServer(function (request, response) {
             response.end(result.body);
         });
     });
-}).listen(8550);
+}).listen(config.listenerPort);
 
 }
 });
