@@ -5,6 +5,10 @@ var config = {}
 config.serverPort = 8443;
 config.listenerPort = 8550;
 
+config.emailUser = '';
+config.emailPass = '';
+config.emailService = 'Gmail'; // well known services - http://www.nodemailer.com/docs/smtp
+
 config.mongo = {};
 
 config.mongo.dbname = 'collect';
