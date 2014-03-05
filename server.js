@@ -161,7 +161,7 @@ RESPONSE CODES
 	returns nothing
 */
 router.get('/adminLog').bind(function (req, res, params) {
-	auth(params, true, req, res, function (docs) {
+	auth(params, false, req, res, function (docs) {
 
             db.collection('adminWriteLog', function (err, collection) {
                 collection.find({}).sort({'_id':-1}).limit(50).toArray(function(err, docs) {

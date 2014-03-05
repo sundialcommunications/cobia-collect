@@ -52,8 +52,10 @@ window.onpopstate = function(event) {
                         for (var i in data.zones) {
                             h += '<li><a href="#" onClick="zoneView(\''+data.zones[i]._id+'\',false); return false;">'+data.zones[i].name+' ('+data.zones[i].numUp+'/'+data.zones[i].numTotal+')';
 
-                            if (data.zones[i].numDown>0) {
-                                h += ' <span style="float: right;" class="label label-important">Hosts Down</span>';
+                            if (data.zones[i].numDown>(data.zones[i].numTotal/2)) {
+                                h += ' <span style="float: right;" class="label label-important">' + data.zones[i].numDown + ' Hosts Down</span>';
+                            } else if (data.zones[i].numDown>0) {
+                                h += ' <span style="float: right;" class="label label-warning">' + data.zones[i].numDown + ' Hosts Down</span>';
                             } else {
                                 h += ' <span style="float: right;" class="label label-success">Stable</span>';
                             }
