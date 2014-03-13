@@ -193,7 +193,7 @@ window.onpopstate = function(event) {
         $('#newGroupViewButton').on("click", function(event) {
             event.preventDefault();
 
-            apiCall('/group','POST',{'name':$('#newGroupViewName').val(),'notes':$('#newGroupViewNotes').val(),'zoneId':$('#newGroupViewZoneId').val()}, function (err, data) {
+            apiCall('/group','POST',{'name':$('#newGroupViewName').val(),'supportNumber':$('#newGroupViewSupportNumber').val(),'notes':$('#newGroupViewNotes').val(),'zoneId':$('#newGroupViewZoneId').val()}, function (err, data) {
 
                 if (err) {
                     alert(err.error);
@@ -201,6 +201,7 @@ window.onpopstate = function(event) {
                     alert('Group: '+$('#newGroupViewName').val()+' created');
                     $('#newGroupViewName').val('');
                     $('#newGroupViewNotes').val('');
+                    $('#newGroupViewSupportNumber').val('');
                 }
 
             });
@@ -402,6 +403,7 @@ window.onpopstate = function(event) {
                     alert(err.error);
                 } else {
                     $('#groupViewTitle').html(data.group.name);
+                    $('#groupViewSupportNumber').val(data.group.supportNumber);
                     $('#groupViewNotes').html(data.group.notes);
                 }
 
@@ -748,7 +750,7 @@ svg.append("path")
         }
 
         function updateGroup(groupId) {
-            apiCall('/group','PUT',{'groupId':groupId,'name':$('#groupViewTitle').html(),'notes':$('#groupViewNotes').html()}, function (err, data) {
+            apiCall('/group','PUT',{'groupId':groupId,'name':$('#groupViewTitle').html(),'supportNumber':$('#groupViewSupportNumber').val(),'notes':$('#groupViewNotes').html()}, function (err, data) {
 
                 if (err) {
                     alert(err.error);

@@ -184,6 +184,7 @@
 
         <h2>New Group</h2>
         <input id="newGroupViewName" type="text" class="" placeholder="Name" /><br />
+        <input id="newGroupViewSupportNumber" type="text" class="" placeholder="Support Number" /><br />
         <textarea id="newGroupViewNotes" placeholder="Notes" /></textarea><br />
         <h4>Parent Zone</h4>
         <select id="newGroupViewZoneId"></select><br />
@@ -229,6 +230,7 @@
         <div class="defHide" id="groupView">
         <h2 id="groupViewTitle" class="editable" style="float: none;" onpaste="handlepaste(this, event)" contenteditable="true"></h2>
           <div id="groupViewUD"></div>
+          Support #: <input id="groupViewSupportNumber" /><br />
           <p><pre id="groupViewNotes" onpaste="handlepaste(this, event)" contenteditable="true" class="notesHolder"></pre></p>
           <div id="groupViewMap"></div>
         <div id="groupViewHosts"></div>

@@ -825,7 +825,8 @@ GET /group - get group data
 AUTH REQUIRED
 
 REQUEST URL PARAMS
-groupId*
+groupId
+supportNumber
 
 RESPONSE CODES
 200 - Valid Zone
@@ -836,19 +837,17 @@ RESPONSE CODES
 router.get('/group').bind(function (req, res, params) {
     auth(params, false, req, res, function (err, docs) {
 
-        checkParams(params, ['groupId'], function (err) {
-
-            if (err) {
-                res.send(500, {}, {
-                    'error': err
-                });
-            } else {
                 try {
-                    var groupId = new mongodb.ObjectID(params.groupId);
+
                     db.collection('groups', function (err, collection) {
-                        collection.find({
-                            '_id': groupId
-                        }).toArray(function (err, docs) {
+                        var i = {};
+                        if (params.groupId != undefined) {
+                            i._id = new mongodb.ObjectID(params.groupId);
+                        }
+                        if (params.supportNumber != undefined) {
+                            i.supportNumber = params.supportNumber;
+                        }
+                        collection.find(i).limit(1).toArray(function (err, docs) {
                             if (err) {
                                 res.send(500, {}, {
                                     'error': err
@@ -866,8 +865,6 @@ router.get('/group').bind(function (req, res, params) {
                         'error': err
                     });
                 }
-            }
-        });
 
     });
 });
@@ -883,6 +880,7 @@ REQUEST POST PARAMS
 name* - STR name for group
 notes* - STR notes for group
 zoneId* - STR zone _id of parent zone
+supportNumber - STR support number
 
 RESPONSE CODES
 200 - Valid Zone
@@ -934,6 +932,7 @@ router.post('/group').bind(function (req, res, params) {
                         'name': params.name,
                         'notes': params.notes,
                         'zoneId': new mongodb.ObjectID(params.zoneId),
+                        'supportNumber': String(params.supportNumber),
                         'numUp': 0,
                         'numDown': 0,
                         'numTotal': 0
@@ -964,6 +963,7 @@ REQUEST URL PARAMS
 groupId* - STR id of the group
 name - STR name of the group
 notes - STR notes for the group
+supportNumber - STR support number
 
 RESPONSE CODES
 200 - Valid Zone
@@ -1003,6 +1003,9 @@ router.put('/group').bind(function (req, res, params) {
                     }
                     if (params.notes != undefined && params.notes != '') {
                         i.notes = params.notes;
+                    }
+                    if (params.supportNumber != undefined && params.supportNumber != '') {
+                        i.supportNumber = String(params.supportNumber);
                     }
                     collection.update({
                         '_id': new mongodb.ObjectID(params.groupId)
@@ -1745,8 +1748,8 @@ db.open(function (err, db) {
 
         var fss = new static.Server('./interface');
 
-        https.createServer(options, httpsConnection).listen(config.serverPort);
-        console.log('listening on port ' + config.serverPort);
+        https.createServer(options, httpsConnection).listen(Number(config.serverPort));
+        console.log('listening on port ' + Number(config.serverPort));
 
         function httpsConnection(request, response) {
 
@@ -1799,6 +1802,7 @@ var smtpTransport = nodemailer.createTransport("SMTP", {
 });
 
 var alertCount = 0;
+var alertHosts = '';
 
 // update group and zone up/down counts
 function upDownCount() {
@@ -1813,12 +1817,14 @@ function upDownCount() {
         collection.find({}).toArray(function (err, docs) {
             // loop through each host
             var loopAlertCount = 0;
+            alertHosts = '';
             for (var i = 0; i < docs.length; i++) {
 
                 // calculate alerts
                 if (docs[i].lastUpdate < Math.round((new Date()).getTime() / 1000) - 600) {
                     // host is down
                     loopAlertCount++;
+                    alertHosts += "\n\n" + docs[i].name + ' down for ' + (Math.round((new Date()).getTime() / 1000)-Number(docs[i].lastUpdate)) + ' seconds';
                 }
 
                 // calculate groups
@@ -1930,7 +1936,7 @@ function upDownCount() {
                                     from: "cobia-collect <" + config.emailUser + ">", // sender address
                                     to: docs[i].email, // comma separated list of receivers
                                     subject: loopAlertCount + " hosts offline!!", // Subject line
-                                    text: "cobia-collect reports " + loopAlertCount + ' hosts offline.' // plaintext body
+                                    text: "cobia-collect reports " + loopAlertCount + ' total hosts offline.' + alertHosts // plaintext body
                                 }, function (error, response) {
                                     if (error) {
                                         console.log(error);
