@@ -66,7 +66,7 @@ window.onpopstate = function(event) {
 
                     }
                 } else {
-                    alert(err.error);
+                    console.log(err.error);
                 }
 
             });
@@ -85,7 +85,7 @@ window.onpopstate = function(event) {
 
                     }
                 } else {
-                    alert(err.error);
+                    console.log(err.error);
                 }
 
             });
@@ -158,10 +158,10 @@ window.onpopstate = function(event) {
             apiCall('/zone','POST',{'name':$('#newZoneViewName').val(),'notes':$('#newZoneViewNotes').val()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     loopData();
-                    alert('Zone: '+$('#newZoneViewName').val()+' created');
+                    console.log('Zone: '+$('#newZoneViewName').val()+' created');
                     $('#newZoneViewName').val('');
                     $('#newZoneViewNotes').val('');
                 }
@@ -176,7 +176,7 @@ window.onpopstate = function(event) {
             apiCall('/zones','GET',{}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     $('#newGroupViewZoneId').children().remove();
                     $('#newGroupViewZoneId').append('<option value="">Select a Zone</option>');
@@ -196,9 +196,9 @@ window.onpopstate = function(event) {
             apiCall('/group','POST',{'name':$('#newGroupViewName').val(),'supportNumber':$('#newGroupViewSupportNumber').val(),'notes':$('#newGroupViewNotes').val(),'zoneId':$('#newGroupViewZoneId').val()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Group: '+$('#newGroupViewName').val()+' created');
+                    console.log('Group: '+$('#newGroupViewName').val()+' created');
                     $('#newGroupViewName').val('');
                     $('#newGroupViewNotes').val('');
                     $('#newGroupViewSupportNumber').val('');
@@ -214,7 +214,7 @@ window.onpopstate = function(event) {
             apiCall('/zones','GET',{}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     $('#newHostViewZoneId').children().remove();
                     $('#newHostViewZoneId').append('<option value="">Select a Zone</option>');
@@ -258,7 +258,7 @@ window.onpopstate = function(event) {
             apiCall('/groups','GET',{'zoneId':$('#newHostViewZoneId').val()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     $('#newHostViewGroupId').children().remove();
                     $('#newHostViewGroupId').append('<option value="">Select a Group</option>');
@@ -277,10 +277,10 @@ window.onpopstate = function(event) {
             apiCall('/host','POST',{'login':$('#newHostViewLogin').val(),'key':$('#newHostViewKey').val(),'name':$('#newHostViewName').val(),'notes':$('#newHostViewNotes').val(),'latitude':$('#newHostViewLatitude').val(),'longitude':$('#newHostViewLongitude').val(),'wirelessMode':$('#newHostViewWirelessMode').val(),'wds':$('#newHostViewWds').val(),'channel':$('#newHostViewChannel').val(),'vlan':$('#newHostViewVlan').val(),'ssid':$('#newHostViewSsid').val(),'encryption':$('#newHostViewEncryption').val(),'encryptionKey':$('#newHostViewEncryptionKey').val(),'groupId':$('#newHostViewGroupId').val()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     loopData();
-                    alert('Host: '+$('#newHostViewName').val()+' created');
+                    console.log('Host: '+$('#newHostViewName').val()+' created');
                     $('#newHostViewLogin').val('');
                     $('#newHostViewName').val('');
                     $('#newHostViewNotes').val('');
@@ -299,7 +299,7 @@ window.onpopstate = function(event) {
             apiCall('/zone','GET',{'zoneId':zoneId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     $('#zoneViewTitle').html(data.zone.name);
                     $('#zoneViewUD').html('<p><span class="label label-success">'+data.zone.numUp+' up</span> <span class="label label-important">'+data.zone.numDown+' down</span> <a href="#" onClick="deleteZone(\''+zoneId+'\'); return false;" class="label label-warning">Delete Zone</a> <a href="#" onClick="updateZone(\''+zoneId+'\'); return false;" class="label label-info">Update Zone</a></p>');
@@ -312,7 +312,7 @@ window.onpopstate = function(event) {
             apiCall('/groups','GET',{'zoneId':zoneId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     var c = 0;
                     var h = '<h2>Groups -></h2>';
@@ -343,7 +343,7 @@ window.onpopstate = function(event) {
 
                     apiCall('/hostsForZone','GET',{'zoneId':zoneId}, function (err, data) {
                         if (err) {
-                            alert(err.error);
+                            console.log(err.error);
                         } else {
 
                         function dMap() {
@@ -400,7 +400,7 @@ window.onpopstate = function(event) {
             apiCall('/group','GET',{'groupId':groupId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     $('#groupViewTitle').html(data.group.name);
                     $('#groupViewSupportNumber').val(data.group.supportNumber);
@@ -412,7 +412,7 @@ window.onpopstate = function(event) {
             apiCall('/hosts','GET',{'groupId':groupId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     data.group = {};
                     data.group.numUp = 0;
@@ -553,7 +553,7 @@ window.onpopstate = function(event) {
             apiCall('/host','GET',{'hostId':hostId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     $('#hostViewTitle').html(data.host.name);
                     var h = '';
@@ -595,7 +595,7 @@ window.onpopstate = function(event) {
 
                     apiCall('/collectors','GET',{'hostId':hostId}, function (err, data) {
                         if (err) {
-                            alert(err.error);
+                            console.log(err.error);
                         } else {
                             var h = '<h2>Collectors<h2>';
                             for (var i=0; i<data.collectors.length; i++) {
@@ -725,9 +725,9 @@ svg.append("path")
             apiCall('/zone','PUT',{'zoneId':zoneId,'name':$('#zoneViewTitle').html(),'notes':$('#zoneViewNotes').html()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Zone Updated');
+                    console.log('Zone Updated');
                     zoneView(zoneId,false);
                     loopData();
                 }
@@ -739,9 +739,9 @@ svg.append("path")
             apiCall('/zone','DELETE',{'zoneId':zoneId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Zone Deleted');
+                    console.log('Zone Deleted');
                     zoneView(zoneId,false);
                     loopData();
                 }
@@ -753,9 +753,9 @@ svg.append("path")
             apiCall('/group','PUT',{'groupId':groupId,'name':$('#groupViewTitle').html(),'supportNumber':$('#groupViewSupportNumber').val(),'notes':$('#groupViewNotes').html()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Group Updated');
+                    console.log('Group Updated');
                     groupView(groupId,false);
                 }
 
@@ -766,9 +766,9 @@ svg.append("path")
             apiCall('/group','DELETE',{'groupId':groupId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Group Deleted');
+                    console.log('Group Deleted');
                     showView(null);
                     loopData();
                 }
@@ -780,9 +780,9 @@ svg.append("path")
             apiCall('/host','PUT',{'hostId':hostId,'reboot':1}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Host Rebooted');
+                    console.log('Host Rebooted');
                     hostView(hostId,false);
                 }
 
@@ -795,7 +795,7 @@ svg.append("path")
 						apiCall('/hosts','GET',{'groupId':groupId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     for (var i in data.hosts) {
                     			
@@ -810,7 +810,7 @@ svg.append("path")
             });
                     			
                     			}
-                    			alert('hosts in group rebooted')
+                    			console.log('hosts in group rebooted')
                     		}
                     		
                     		
@@ -822,9 +822,9 @@ svg.append("path")
             apiCall('/host','PUT',{'hostId':hostId,'login':$('#hostViewLogin').html(),'name':$('#hostViewTitle').html(),'notes':$('#hostViewNotes').html(),'key':$('#hostViewKey').html(),'longitude':$('#hostViewLongitude').html(),'latitude':$('#hostViewLatitude').html(),'wirelessMode':$('#hostViewWirelessMode').html(),'wds':$('#hostViewWds').html(),'channel':$('#hostViewChannel').html(),'vlan':$('#hostViewVlan').html(),'ssid':$('#hostViewSsid').html(),'encryption':$('#hostViewEncryption').html(),'encryptionKey':$('#hostViewEncryptionKey').html()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Host Updated');
+                    console.log('Host Updated');
                     hostView(hostId,false);
                 }
 
@@ -835,9 +835,9 @@ svg.append("path")
             apiCall('/host','DELETE',{'hostId':hostId}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Host Deleted');
+                    console.log('Host Deleted');
                     showView(null);
                     loopData();
                 }
@@ -852,7 +852,7 @@ svg.append("path")
             apiCall('/admins','GET',{}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
 
                     var h = '';
@@ -887,9 +887,9 @@ svg.append("path")
             apiCall('/admin','DELETE',{'adminUsername':username}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Admin Deleted');
+                    console.log('Admin Deleted');
                     accountsView();
                 }
 
@@ -900,7 +900,7 @@ svg.append("path")
             apiCall('/admin','PUT',{'adminUsername':username,'adminReadOnly':v}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
                     accountsView();
                 }
@@ -914,9 +914,9 @@ svg.append("path")
             apiCall('/admin','POST',{'adminUsername':$('#accountsViewUsername').val(),'adminPassword':$('#accountsViewPassword').val(),'adminEmail':$('#accountsViewEmail').val(),'adminReadOnly':1}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Admin: '+$('#accountsViewUsername').val()+' created');
+                    console.log('Admin: '+$('#accountsViewUsername').val()+' created');
                     $('#accountsViewUsername').val('');
                     $('#accountsViewPassword').val('');
                     $('#accountsViewEmail').val('');
@@ -933,9 +933,9 @@ svg.append("path")
             apiCall('/admin','PUT',{'adminUsername':$.cookie('username'),'adminPassword':$('#accountsViewChangePassword').val(),'adminEmail':$('#accountsViewChangeEmail').val()}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
-                    alert('Account Updated');
+                    console.log('Account Updated');
                     if ($('#accountsViewChangePassword').val() != '') {
                         logOut();
                     } else {
@@ -956,7 +956,7 @@ svg.append("path")
             apiCall('/adminLog','GET',{}, function (err, data) {
 
                 if (err) {
-                    alert(err.error);
+                    console.log(err.error);
                 } else {
 
                     var h = '';
@@ -1072,5 +1072,5 @@ function processpaste (elem, savedcontent) {
     elem.innerHTML = savedcontent;
 
     // Do whatever with gathered data;
-    alert(pasteddata);
+    console.log(pasteddata);
 }
