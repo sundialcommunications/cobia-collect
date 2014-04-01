@@ -314,30 +314,18 @@ window.onpopstate = function(event) {
                 if (err) {
                     console.log(err.error);
                 } else {
-                    var c = 0;
                     var h = '<h2>Groups -></h2>';
                     for (var i in data.groups) {
 
-                        if (c%3 == 0) {
-                            h += '<div class="row-fluid">';
-                        }
-
-                        h += '<div class="span4">';
-                        h += '<h3>'+data.groups[i].name+'</h3>';
+                        h += '<div>';
+                        h += '<h4>'+data.groups[i].name+'</h4>';
                         h += '<p><span class="label label-success">'+data.groups[i].numUp+' up</span>';
                         if (data.groups[i].numDown > 0) {
                             h += ' <span class="label label-important">'+data.groups[i].numDown+' down</span>';
                         }
-                        h += '</p>';
+                        h += ' <a class="btn" href="#" onClick="groupView(\''+data.groups[i]._id+'\',false); return false;">View group &raquo;</a></p>';
                         h += '<p><pre class="notesHolder">'+data.groups[i].notes+'</pre></p>';
-                        h += '<p><a class="btn" href="#" onClick="groupView(\''+data.groups[i]._id+'\',false); return false;">View group &raquo;</a></p>';
                         h += '</div><!--/span-->';
-
-                        if (c%3 == 2) {
-                            h += '</div><!--/row-->';
-                        }
-
-                        c++;
 
                     }
 
@@ -418,18 +406,14 @@ window.onpopstate = function(event) {
                     data.group.numUp = 0;
                     data.group.numDown = 0;
                     data.group.numTotal = 0;
-                    var c = 0;
                     var h = '<h2>Hosts -></h2>';
                     for (var i in data.hosts) {
 
-                        if (c%3 == 0) {
-                            h += '<div class="row-fluid">';
-                        }
-
-                        h += '<div class="span4">';
-                        h += '<h3>'+data.hosts[i].name+'</h3>';
+                        h += '<div>';
+                        h += '<h4>'+data.hosts[i].name+'</h4>';
                         h += '<p><pre class="notesHolder">'+data.hosts[i].notes+'</pre></p>';
                         h += '<p><span class="label label-info">Login:</span> '+data.hosts[i].login+'</p>';
+                        h += '<p><span class="label label-info">WAN IP:</span> '+data.hosts[i].wanIp+'</p>';
                         h += '<p><span class="label label-info">Last Update:</span> <span class="epochago">'+data.hosts[i].lastUpdate+'</span></p>';
 
                         if (data.hosts[i].version) {
@@ -456,12 +440,6 @@ window.onpopstate = function(event) {
                         h += '</p>';
                         h += '<p><a class="btn" href="#" onClick="hostView(\''+data.hosts[i]._id+'\',false); return false;">View host &raquo;</a></p>';
                         h += '</div><!--/span-->';
-
-                        if (c%3 == 2) {
-                            h += '</div><!--/row-->';
-                        }
-
-                        c++;
 
                     }
 
