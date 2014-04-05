@@ -15,21 +15,6 @@ Array.prototype.hasValue = function(value) {
 var validCollectors = new Array();
 var colReqs = new Array();
 
-fs.readdir('./collectors', function (err, files) {
-for (var i=0; i<files.length; i++) {
-		// split, limit 1, remove .js
-		var s = files[i].split('.');
-        if (s[1] == 'js') { // check that file actually ends in .js
-		    // add as valid collector
-		    validCollectors[i] = s[0];
-            colReqs[s[0]] = require('./collectors/'+files[i]);
-            // running ensureIndex for the collector
-            colReqs[s[0]].ensureIndex(db);
-		    console.log('Adding: collectors/'+files[i]);
-        }
-	}
-});
-
 function authorize(d, cb) {
     // authenticate request
     db.collection('hosts', function (err, collection) {
@@ -125,6 +110,21 @@ router.route(['POST','GET'],'/update').bind(function (req, res, data) {
 // db open START
 db.open(function (err, db) {
 if (db) {
+
+fs.readdir('./collectors', function (err, files) {
+for (var i=0; i<files.length; i++) {
+		// split, limit 1, remove .js
+		var s = files[i].split('.');
+        if (s[1] == 'js') { // check that file actually ends in .js
+		    // add as valid collector
+		    validCollectors[i] = s[0];
+            colReqs[s[0]] = require('./collectors/'+files[i]);
+            // running ensureIndex for the collector
+            colReqs[s[0]].ensureIndex(db);
+		    console.log('Adding: collectors/'+files[i]);
+        }
+	}
+});
 
 require('http').createServer(function (request, response) {
     var body = "";
