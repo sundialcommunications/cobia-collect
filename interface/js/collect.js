@@ -390,6 +390,7 @@ window.onpopstate = function(event) {
                 if (err) {
                     alert(err.error);
                 } else {
+                    console.log(groupId);
                     $('#groupViewTitle').html(data.group.name);
                     $('#groupViewSupportNumber').val(data.group.supportNumber);
                     $('#groupViewNotes').html(data.group.notes);
