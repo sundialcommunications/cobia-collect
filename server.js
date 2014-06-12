@@ -2041,7 +2041,7 @@ function upDownCount() {
                                 smtpTransport.sendMail({
                                     from: "cobia-collect <" + config.emailUser + ">", // sender address
                                     to: docs[i].email, // comma separated list of receivers
-                                    subject: loopAlertCount + " hosts offline!!", // Subject line
+                                    subject: loopAlertCount + " hosts offline @ "+new Date().toLocaleString(), // Subject line
                                     text: "cobia-collect reports " + loopAlertCount + ' total hosts offline.' + alertHosts // plaintext body
                                 }, function (error, response) {
                                     if (error) {
